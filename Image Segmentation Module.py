@@ -1,8 +1,9 @@
 import cv2
 import numpy as np
 
-img = cv2.imread('math1.jpg')
+img = cv2.imread('images/math4.jpg')
 im_copy = img.copy()
+final_copy = img.copy()
 contrast = 1.5  # Contrast control (1.0-3.0)
 brightness = 0  # Brightness control (0-100)
 
@@ -20,10 +21,10 @@ just_vertical = cv2.add(img, vertical_mask)
 
 horizontal_size = img.shape[1] // 9
 horizontal_kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (horizontal_size, 1))
-horizontal_mask = 255-cv2.morphologyEx(img, cv2.MORPH_CLOSE, horizontal_kernel)
+horizontal_mask = 255 - cv2.morphologyEx(img, cv2.MORPH_CLOSE, horizontal_kernel)
 just_horizontal = cv2.add(img, horizontal_mask)
 
-result = just_vertical #cv2.addWeighted(just_horizontal, 1, just_vertical, 0, 0) #placeholder values
+result = just_vertical  # cv2.addWeighted(just_horizontal, 1, just_vertical, 0, 0) #placeholder values
 
 cv2.imshow("original image", img)
 cv2.waitKey(0)
@@ -31,12 +32,12 @@ cv2.destroyWindow("original image")
 cv2.imshow("extracted features", vertical_extract)
 cv2.waitKey(0)
 cv2.destroyWindow("extracted features")
-cv2.imshow("result", just_horizontal)
+cv2.imshow("result", just_vertical)
 cv2.waitKey(0)
 cv2.destroyWindow("result")
 
 # Converting to greyscale
-gray = cv2.cvtColor(result, cv2.COLOR_BGR2GRAY)
+gray = cv2.cvtColor(just_vertical, cv2.COLOR_BGR2GRAY)
 # applying Gaussian blur
 blur = cv2.GaussianBlur(gray, (5, 5), 0)
 # experimenting with thresholding functions
@@ -61,16 +62,16 @@ for ctr in contours:
     x, y, w, h = cv2.boundingRect(ctr)
     area.append(w * h)
 area = sorted(area)
-areaMean = np.mean(area)    # average area
-areaSD = np.std(area)       # standard deviation of area
+areaMean = np.mean(area)  # average area
+areaSD = np.std(area)  # standard deviation of area
 print("average area =", areaMean)
 print("areaSD = ", areaSD)
 for ctr in contours:
     x, y, w, h = cv2.boundingRect(ctr)
     area = w * h
-    if area >= areaMean / 5:  # and area <= areaMean*10):
+    if area >= areaMean / 10:  # and area <= areaMean*10):
         cv2.rectangle(im_copy, (x, y), (x + w, y + h), (0, 0, 255), 2)
-        coords.append([x, y, w, h, counter - 1])
+        coords.append([x, y, w, h])
         print(counter)
         CentreOfMass.append([(x + w) / 2, (y + h) / 2])
         counter += 1
@@ -78,24 +79,40 @@ Coords = sorted(coords, key=lambda x: (x[0]))
 
 print(Coords)
 
+
 # none of the shit below works lmao
 
-# for index in range(len(Coords)):
-#     for possibleMatch in range(len(Coords)-index-1):
-#         xdiff = abs(Coords[index][2]-Coords[possibleMatch+index][0])
-#         if Coords[index][0]<=Coords[possibleMatch+index][0]<=Coords[index][0]+Coords[index][2]:
-#             if xdiff<= 2*min(Coords[index][2], Coords[possibleMatch+index][2]):
-#                 newX = max(Coords[index][0], Coords[possibleMatch+index][0])
-#                 newY = max(Coords[index][1], Coords[possibleMatch+index][1])
-#                 newW = max(Coords[index][2], Coords[possibleMatch+index][2])
-#                 newH = Coords[index][3]+Coords[possibleMatch+index][3]
-#                 cv2.rectangle(im_copy, (newX, newY), (newX + newW, newY + newH), (0,0,255) , 2)
-#                 print(temp)
-#                 Coords.remove(Coords[Coords[index][4]])
-#                 Coords.remove(temp)
-#                 print(Coords[index][4], Coords[possibleMatch][4])
 
-print(CentreOfMass)
+#groupedBoxes = cv2.groupRectangles()
+
+
+def getOverlap(box1, box2):
+    return min([box2[0] + box2[2] - box1[0], box1[0] + box1[2] - box2[0]])
+
+
+for box in Coords:
+    temp = box
+    Coords.remove(box)
+    print("Current box coords", temp)
+    print(sorted(Coords, key=lambda x: (x[0])))
+    for i in range(0, 2):
+        for otherBox in Coords:
+            if (temp[0] <= otherBox[0] <= temp[0] + temp[2]) or (temp[0] <= otherBox[0] + otherBox[2] <= temp[0] + temp[2]):
+                overlap = getOverlap(temp, otherBox)
+                if overlap >= temp[2] / 3:
+                    temp = [min(temp[0], otherBox[0]), min(temp[1], otherBox[1]),
+                            max(temp[2], otherBox[0] + otherBox[2] - temp[0], temp[0]+temp[2]-otherBox[0]),
+                            max(temp[3], otherBox[1] + otherBox[3] - temp[1], temp[1]+temp[3]-otherBox[1])]
+                    Coords.remove(otherBox)
+                    print("box removed")
+        Coords.append(temp)
+    i+=1
+for sortedBox in Coords:
+    cv2.rectangle(final_copy, (sortedBox[0], sortedBox[1]), (sortedBox[0] + sortedBox[2], sortedBox[1] + sortedBox[3]),
+                  (0, 255, 0), 2)
+
+
 cv2.imshow('contours', im_copy)
+cv2.imshow('grouped contours', final_copy)
+print(len(Coords))
 cv2.waitKey(0)
-
