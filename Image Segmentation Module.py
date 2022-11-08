@@ -34,37 +34,10 @@ def RemoveStructure(img):
     return result
 
 
-cv2.imshow("original image", img)
-cv2.waitKey(0)
-cv2.destroyWindow("original image")
-result = RemoveStructure(img)
-cv2.imshow("result", result)
-cv2.waitKey(0)
-cv2.destroyWindow("result")
-
-# Converting to greyscale
-gray = cv2.cvtColor(result, cv2.COLOR_BGR2GRAY)
-# applying Gaussian blur
-blur = cv2.GaussianBlur(gray, (5, 5), 0)
-# experimenting with thresholding functions
-thresh = cv2.threshold(blur, 0, 255, cv2.THRESH_OTSU | cv2.THRESH_BINARY_INV)[1]
-
-cv2.imshow("thresh", thresh)
-cv2.waitKey(0)
-cv2.destroyWindow('thresh')
-
-edged = cv2.Canny(thresh, 70, 200)
-
-cv2.imshow('edged', edged)
-cv2.waitKey(0)
-cv2.destroyWindow('edged')
-
-
-def FindContourBoxes(edged, im_copy):
+def findContourBoxes(edged, im_copy):
     contours, hierarchy = cv2.findContours(edged, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
     counter = 1
     area = []
-    CentreOfMass = []
     coords = []
     for ctr in contours:
         x, y, w, h = cv2.boundingRect(ctr)
@@ -81,16 +54,11 @@ def FindContourBoxes(edged, im_copy):
             cv2.rectangle(im_copy, (x, y), (x + w, y + h), (0, 0, 255), 2)
             coords.append([x, y, w, h])
             print(counter)
-            CentreOfMass.append([(x + w) / 2, (y + h) / 2])
             counter += 1
     Coords = sorted(coords, key=lambda x: (x[0]))
     print(Coords)
 
     return Coords
-
-
-# none of the shit below works lmao
-
 
 # groupedBoxes = cv2.groupRectangles()
 
@@ -124,9 +92,35 @@ def drawGroupContours(Coords, img):
                       (0, 255, 0), 2)
 
 
+cv2.imshow("original image", img)
+cv2.waitKey(0)
+cv2.destroyWindow("original image")
+
+result = RemoveStructure(img)
+
+cv2.imshow("result", result)
+cv2.waitKey(0)
+cv2.destroyWindow("result")
+
+# Converting to greyscale
+gray = cv2.cvtColor(result, cv2.COLOR_BGR2GRAY)
+# applying Gaussian blur
+blur = cv2.GaussianBlur(gray, (5, 5), 0)
+# experimenting with thresholding functions
+thresh = cv2.threshold(blur, 0, 255, cv2.THRESH_OTSU | cv2.THRESH_BINARY_INV)[1]
+
+cv2.imshow("thresh", thresh)
+cv2.waitKey(0)
+cv2.destroyWindow('thresh')
+
+edged = cv2.Canny(thresh, 70, 200)
+
+cv2.imshow('edged', edged)
+cv2.waitKey(0)
+cv2.destroyWindow('edged')
+
+Coords = findContourBoxes(edged, im_copy)
 cv2.imshow('contours', im_copy)
-drawGroupContours(Coords, final_copy)
-cv2.imshow('grouped contours', final_copy)
 drawGroupContours(Coords, final_copy)
 cv2.imshow('grouped contours', final_copy)
 print(len(Coords))
