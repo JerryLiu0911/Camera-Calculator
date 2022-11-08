@@ -97,8 +97,19 @@ def drawGroupContours(Coords, img):
         i += 1
     for sortedBox in Coords:
         cv2.rectangle(img, (sortedBox[0], sortedBox[1]), (sortedBox[0] + sortedBox[2], sortedBox[1] + sortedBox[3]),
-                      (0, 255, 0), 2)
+                      (255, 255, 255), 2)
 
+
+
+def cropContourBoxes(Coords, img):
+    imglist = []
+    for box in Coords:
+        symbol = img[box[1]:box[1]+box[3], box[0]:box[0]+box[2] ]
+        imglist.append(symbol)
+        cv2.imshow("Cropped_image", symbol)
+        cv2.waitKey(0)
+        cv2.destroyWindow("Cropped_image")
+    return imglist
 
 cv2.imshow("original image", img)
 cv2.waitKey(0)
@@ -129,7 +140,8 @@ cv2.destroyWindow('edged')
 
 Coords = findContourBoxes(edged, im_copy)
 cv2.imshow('contours', im_copy)
-drawGroupContours(Coords, final_copy)
-cv2.imshow('grouped contours', final_copy)
+drawGroupContours(Coords, thresh)
+cv2.imshow('grouped contours', thresh)
+imglist = cropContourBoxes(Coords, thresh)
 print(len(Coords))
 cv2.waitKey(0)
