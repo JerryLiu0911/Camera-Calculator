@@ -12,7 +12,8 @@ brightness = 0  # Brightness control (0-100)
 
 
 # Remove lines
-def RemoveStructure(img):
+def RemoveStructure(img, direction):
+
     vertical_size = img.shape[0] // 3
     vertical_kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (1, vertical_size))
     vertical_mask = 255 - cv2.morphologyEx(img, cv2.MORPH_CLOSE, vertical_kernel)
@@ -26,7 +27,14 @@ def RemoveStructure(img):
     horizontal_mask = 255 - cv2.morphologyEx(img, cv2.MORPH_CLOSE, horizontal_kernel)
     just_horizontal = cv2.add(img, horizontal_mask)
 
-    cv2.imshow("extracted features", vertical_extract)
+    horizontal_extract = cv2.morphologyEx(img, cv2.MORPH_CLOSE, horizontal_kernel)
+
+    if direction == 1 :
+        features = vertical_extract
+    else:
+        features = horizontal_extract
+
+    cv2.imshow("extracted features", features)
     cv2.waitKey(0)
     cv2.destroyWindow("extracted features")
 
@@ -96,7 +104,7 @@ cv2.imshow("original image", img)
 cv2.waitKey(0)
 cv2.destroyWindow("original image")
 
-result = RemoveStructure(img)
+result = RemoveStructure(img, 0)
 
 cv2.imshow("result", result)
 cv2.waitKey(0)
