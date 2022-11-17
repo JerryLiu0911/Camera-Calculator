@@ -1,0 +1,38 @@
+#:kivy 2.1.0
+
+<Camera>:
+    FloatLayout:
+        size: root.width
+    canvas:
+        Rectangle:
+            pos: self.center_x - 5, 0
+            size: 10, self.height
+        Ellipse:
+            pos: self.center_x-self.width/2, self.height-200
+
+    Button:
+        size_hint: 0.1, 0.1
+        pos: self.center_x-self.width/2, self.height-200
+    Button:
+        text: "press"
+        size_hint: 0.2,0.2
+        on_press: root.drawRectangle()
+    Label:
+        font_size: 70
+        center_x: root.width / 4
+        top: root.top - 50
+        text: "0"
+
+    Label:
+        font_size: 70
+        center_x: root.width * 3 / 4
+        top: root.top - 50
+        text: "0"
+
+<CropBox>:
+    canvas:
+        Color:
+            rgba : 1,1,1,0.2
+        Rectangle:
+            pos: self.center_x - 50, self.center_y - 50
+            size : 200,100
