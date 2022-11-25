@@ -1,38 +1,51 @@
-#:kivy 2.1.0
+GUI:
 
-<Camera>:
-    FloatLayout:
-        size: root.width
-    canvas:
-        Rectangle:
-            pos: self.center_x - 5, 0
-            size: 10, self.height
-        Ellipse:
-            pos: self.center_x-self.width/2, self.height-200
 
-    Button:
-        size_hint: 0.1, 0.1
-        pos: self.center_x-self.width/2, self.height-200
-    Button:
-        text: "press"
-        size_hint: 0.2,0.2
-        on_press: root.drawRectangle()
-    Label:
-        font_size: 70
-        center_x: root.width / 4
-        top: root.top - 50
-        text: "0"
+<toolBar@MDBoxLayout>:
+    orientation:'vertical'
+    MDTopAppBar:
+        title : 'CamCalc'
+        type: 'top'
+        pos: root.center_x, root.center_y
 
-    Label:
-        font_size: 70
-        center_x: root.width * 3 / 4
-        top: root.top - 50
-        text: "0"
+<camera>:
+    resolution : 1980,1080
+    play : True
+    size : 100,100
 
-<CropBox>:
-    canvas:
+<CropBox@canvas>:
+
+
+<GUI>:
+    canvas.before:
         Color:
-            rgba : 1,1,1,0.2
+            rgb : 0.3,0.3,0.3
         Rectangle:
-            pos: self.center_x - 50, self.center_y - 50
-            size : 200,100
+            id : menu
+            pos : root.center_x-root.width/2, root.center_y-root.height/2
+            size : root.width, root.height
+    canvas.after:
+        Color:
+            rgba : 0.6,0.6,1,0.7
+        Rectangle:
+            id : base
+            pos : 0, root.height - root.height * 0.1
+            size : root.width, root.height * 0.1
+        Color:
+            rgb : 1,1,1
+        #Line:
+            #id : cropBox
+            #width : 2
+            #rectangle : (root.center_x-root.cropBoxWidth/2, root.center_y+root.height*0.1, root.cropBoxWidth ,root.cropBoxHeight)
+
+    Camera:
+        id : cam
+        resolution : root.width, root.height
+        size : root.width, root.height
+        allow_stretch : True
+
+    MDFillRoundFlatButton :
+        id : button
+        size : root.s, root.s
+        pos : root.center_x - root.s/2, root.y + 50
+        on_release : root.capture()
