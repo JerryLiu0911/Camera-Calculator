@@ -1,19 +1,15 @@
 GUI:
 
 
-<toolBar@MDBoxLayout>:
-    orientation:'vertical'
-    MDTopAppBar:
-        title : 'CamCalc'
-        type: 'top'
-        pos: root.center_x, root.center_y
+#<toolBar@MDBoxLayout>:
+    #orientation:'vertical'
+    #MDTopAppBar:
+        #title : 'CamCalc'
+        #type: 'top'
+        #pos: root.center_x, root.center_y
 
-<camera>:
-    resolution : 1980,1080
-    play : True
-    size : 100,100
 
-<CropBox@canvas>:
+<CropBox>:
 
 
 <GUI>:
@@ -33,19 +29,3 @@ GUI:
             size : root.width, root.height * 0.1
         Color:
             rgb : 1,1,1
-        #Line:
-            #id : cropBox
-            #width : 2
-            #rectangle : (root.center_x-root.cropBoxWidth/2, root.center_y+root.height*0.1, root.cropBoxWidth ,root.cropBoxHeight)
-
-    Camera:
-        id : cam
-        resolution : root.width, root.height
-        size : root.width, root.height
-        allow_stretch : True
-
-    MDFillRoundFlatButton :
-        id : button
-        size : root.s, root.s
-        pos : root.center_x - root.s/2, root.y + 50
-        on_release : root.capture()
