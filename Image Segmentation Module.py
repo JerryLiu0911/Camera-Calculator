@@ -1,7 +1,7 @@
 import cv2
 import numpy as np
 
-img = cv2.imread('images/math3.jpg')
+img = cv2.imread('croppedinput.jpg')
 im_copy = img.copy()
 final_copy = img.copy()
 contrast = 1.5  # Contrast control (1.0-3.0)

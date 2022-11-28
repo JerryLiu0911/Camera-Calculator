@@ -28,7 +28,7 @@ class CropBox(MDWidget):
         self.cropBoxHeight = self.height * 1
         self.cropBoxWidth = self.width * 1
         with self.canvas:
-            Color(rgba=(0, 0, 0, 0.4))
+            Color(rgba=(1, 1, 1, 0.4))
             self.cropBox = RoundedRectangle(
                 pos=(self.center_x - self.cropBoxWidth / 2, self.center_y + self.height * 0.1),
                 size=(self.cropBoxWidth, self.cropBoxHeight),
@@ -36,7 +36,7 @@ class CropBox(MDWidget):
             )
             self.cropPrompt = Label(
                 text="Align your math equation within the box",
-                color=(0, 0, 0),
+                color=(1, 1, 1),
                 halign='center',
                 pos=(self.center_x, self.cropBox.pos[1] + self.cropBoxHeight - self.height * 0.05),
                 font_size=12
@@ -88,6 +88,7 @@ class GUI(Screen):
         super(GUI, self).__init__(**kwargs)
         self.s = 70
         self.camera = Camera(resolution=self.size, size=self.size, allow_stretch=True, play=True, index=0)
+        self.crop = CropBox()
         with self.canvas.after:
             self.Title = Label(
                 text="CamCalc",
@@ -102,13 +103,19 @@ class GUI(Screen):
         self.Title.pos = 10, self.height - self.height * 0.13
         self.camera = Camera(resolution=self.size, size=self.size, allow_stretch=True, play=True, index=0)
         self.add_widget(self.camera)
-        self.add_widget(CropBox())
-        self.add_widget(MDFillRoundFlatButton(size=(70, 70), pos=(self.center_x - 35, self.y + 50),
+        self.add_widget(self.crop)
+        self.add_widget(MDFillRoundFlatButton(size=(70, 70), pos=(self.center_x - 35, self.y + 50), text = 'Capture',
                                               on_release=lambda x: self.capture())
                         )
 
     def capture(self):
         self.camera.export_to_png("input.jpg")
+        img = cv2.imread('input.jpg')
+        print(self.crop.cropBox.pos[0], self.crop.cropBox.pos[1])
+        print(img.shape[1],self.crop.cropBox.pos[1] )
+        #below line got sum shit going on
+        img = img[int(self.crop.cropBox.pos[1]):int(self.crop.cropBox.pos[1]+self.crop.cropBoxHeight), int(self.crop.cropBox.pos[0]):int(self.crop.cropBox.pos[0]+self.crop.cropBoxWidth)]
+        cv2.imwrite('croppedinput.jpg', img)
         print("capture")
 
 
