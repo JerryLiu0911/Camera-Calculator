@@ -11,6 +11,7 @@ from kivymd.uix.fitimage import fitimage
 from kivy.uix.camera import Camera
 from kivy.uix.label import Label
 import cv2
+import ImageSegmentationModule
 from kivymd.uix.fitimage import fitimage
 
 
@@ -43,6 +44,7 @@ class CropBox(MDWidget):
             )
 
     def on_size(self, *args):
+        self.clear_widgets()
         self.cropBoxHeight = self.height * 0.15
         self.cropBoxWidth = self.width * 0.65
         self.cropBox.pos = self.center_x - self.cropBoxWidth / 2, self.center_y + self.height * 0.1 - self.cropBoxHeight / 2
@@ -86,8 +88,9 @@ class CropBox(MDWidget):
 class GUI(Screen):
     def __init__(self, **kwargs):
         super(GUI, self).__init__(**kwargs)
+        self.clear_widgets()
         self.s = 70
-        self.camera = Camera(resolution=self.size, size=self.size, allow_stretch=True, play=True, index=0)
+        # self.camera = Camera(resolution=self.size, size=self.size, allow_stretch=True, play=True, index=0)
         self.crop = CropBox()
         with self.canvas.after:
             self.Title = Label(
@@ -100,23 +103,28 @@ class GUI(Screen):
         pass
 
     def on_size(self, *args):
+        self.clear_widgets()
         self.Title.pos = 10, self.height - self.height * 0.13
         self.camera = Camera(resolution=self.size, size=self.size, allow_stretch=True, play=True, index=0)
         self.add_widget(self.camera)
         self.add_widget(self.crop)
-        self.add_widget(MDFillRoundFlatButton(size=(70, 70), pos=(self.center_x - 35, self.y + 50), text = 'Capture',
+        self.add_widget(MDFillRoundFlatButton(size=(70, 70), pos=(self.center_x - 35, self.y + 50), text='Capture',
                                               on_release=lambda x: self.capture())
                         )
 
     def capture(self):
         self.camera.export_to_png("input.jpg")
         img = cv2.imread('input.jpg')
+        print('img proportions : ', img.shape[0], img.shape[1])
+        print('window proportions : ', self.width, self.height)
         print(self.crop.cropBox.pos[0], self.crop.cropBox.pos[1])
-        print(img.shape[1],self.crop.cropBox.pos[1] )
-        #below line got sum shit going on
-        img = img[int(self.crop.cropBox.pos[1]):int(self.crop.cropBox.pos[1]+self.crop.cropBoxHeight), int(self.crop.cropBox.pos[0]):int(self.crop.cropBox.pos[0]+self.crop.cropBoxWidth)]
+        print(img.shape[1], self.crop.cropBox.pos[1])
+        img = img[img.shape[0] - int(self.crop.cropBox.pos[1]) - int(self.crop.cropBoxHeight): img.shape[0] - int(
+            self.crop.cropBox.pos[1]),
+              int(self.crop.cropBox.pos[0]):int(self.crop.cropBox.pos[0] + self.crop.cropBoxWidth)]
         cv2.imwrite('croppedinput.jpg', img)
         print("capture")
+        ImageSegmentationModule.segment('croppedinput.jpg')
 
 
 class CamCalc(MDApp):
