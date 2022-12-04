@@ -88,6 +88,7 @@ class CropBox(MDWidget):
 class GUI(Screen):
     def __init__(self, **kwargs):
         super(GUI, self).__init__(**kwargs)
+        self.camera = None
         self.clear_widgets()
         self.s = 70
         # self.camera = Camera(resolution=self.size, size=self.size, allow_stretch=True, play=True, index=0)
