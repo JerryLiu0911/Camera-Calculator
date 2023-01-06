@@ -1,18 +1,16 @@
-from kivy.graphics import Line, Color, RoundedRectangle
-from kivy.graphics.texture import Texture
-from kivy.uix.button import Button
+import cv2
+from kivy.graphics import Color, RoundedRectangle
+from kivy.uix.camera import Camera
+from kivy.uix.label import Label
 from kivymd.app import MDApp
 from kivymd.uix.button import MDFillRoundFlatButton
 from kivymd.uix.screen import Screen
-from kivy.core.window import Window
 from kivymd.uix.widget import MDWidget
-from kivy.uix.image import Image
-from kivymd.uix.fitimage import fitimage
-from kivy.uix.camera import Camera
-from kivy.uix.label import Label
-import cv2
+
 import ImageSegmentationModule
-from kivymd.uix.fitimage import fitimage
+from tensorflow import keras
+import numpy as np
+
 
 
 class CropBox(MDWidget):
@@ -106,7 +104,8 @@ class GUI(Screen):
     def on_size(self, *args):
         self.clear_widgets()
         self.Title.pos = 10, self.height - self.height * 0.13
-        self.camera = Camera(resolution=self.size, size=self.size, allow_stretch=True, play=True, index=0)
+        #self.camera = Camera(resolution=self.size, size=self.size, allow_stretch=True, play=True, index=0)
+        self.camera = Camera(allow_stretch=True, play=True, index=0)
         self.add_widget(self.camera)
         self.add_widget(self.crop)
         self.add_widget(MDFillRoundFlatButton(size=(70, 70), pos=(self.center_x - 35, self.y + 50), text='Capture',
@@ -116,6 +115,7 @@ class GUI(Screen):
     def capture(self):
         self.camera.export_to_png("input.jpg")
         img = cv2.imread('input.jpg')
+        cv2.imshow('img', img)
         print('img proportions : ', img.shape[0], img.shape[1])
         print('window proportions : ', self.width, self.height)
         print(self.crop.cropBox.pos[0], self.crop.cropBox.pos[1])
@@ -125,7 +125,14 @@ class GUI(Screen):
               int(self.crop.cropBox.pos[0]):int(self.crop.cropBox.pos[0] + self.crop.cropBoxWidth)]
         cv2.imwrite('croppedinput.jpg', img)
         print("capture")
-        ImageSegmentationModule.segment('croppedinput.jpg')
+        inputdata = ImageSegmentationModule.segment('croppedinput.jpg')
+        inputdata = np.array(inputdata)/255
+        print(inputdata)
+        print(inputdata.shape)
+        model = keras.models.load_model('CNN')
+        y_predicted = model.predict(inputdata)
+        for output in y_predicted:
+            print(np.argmax(output))
 
 
 class CamCalc(MDApp):
