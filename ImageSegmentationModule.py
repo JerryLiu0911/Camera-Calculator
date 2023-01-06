@@ -30,15 +30,15 @@ def RemoveStructure(img, direction):
     horizontal_extract = cv2.morphologyEx(img, cv2.MORPH_CLOSE, horizontal_kernel)
 
     if direction == 1:
-        features = vertical_extract
+        result = just_vertical
     else:
-        features = horizontal_extract
+        result = horizontal_extract
 
     # cv2.imshow("extracted features", features)
     # cv2.waitKey(0)
     # cv2.destroyWindow("extracted features")
 
-    result = just_horizontal  # cv2.addWeighted(just_horizontal, 1, just_vertical, 0, 0) #placeholder values
+    #result = cv2.addWeighted(just_horizontal, 1, just_vertical, 0, 0) #placeholder values
     return result
 
 
@@ -86,13 +86,18 @@ def drawGroupContours(Coords, img):
         if (groupedCoords[-1][0] <= box[0] <= groupedCoords[-1][0] + groupedCoords[-1][2]) or (
                 groupedCoords[-1][0] <= box[0] + box[2] <= groupedCoords[-1][0] + groupedCoords[-1][2]):
             overlap = getOverlap(groupedCoords[-1], box)
-            if (overlap >= groupedCoords[-1][2]/10 or ((groupedCoords[-1][0] <= box[0] <= groupedCoords[-1][0] + groupedCoords[-1][2]) and (
+            if (overlap >= groupedCoords[-1][2]/10 or ((groupedCoords[-1][0] <= box[0] <= groupedCoords[-1][0] +
+                                                        groupedCoords[-1][2]) and (
                     groupedCoords[-1][0] <= box[0] + box[2] <= groupedCoords[-1][0] + groupedCoords[-1][2]))):
                 groupedCoords[-1] = [min(groupedCoords[-1][0], box[0]), min(groupedCoords[-1][1], box[1]),
                             max(groupedCoords[-1][2], box[0] + box[2] - groupedCoords[-1][0]),
-                            max(groupedCoords[-1][3], box[1] + box[3] - groupedCoords[-1][1], groupedCoords[-1][1] + groupedCoords[-1][3] - box[1])]
+                            max(groupedCoords[-1][3], box[1] + box[3] - groupedCoords[-1][1], groupedCoords[-1][1] +
+                                groupedCoords[-1][3] - box[1])]
+            else:
+                groupedCoords.append(box)
         else:
             groupedCoords.append(box)
+            print('box appended = ', box)
         Coords.remove(box)
     for sortedBox in groupedCoords:
         cv2.rectangle(img, (sortedBox[0], sortedBox[1]), (sortedBox[0] + sortedBox[2], sortedBox[1] + sortedBox[3]),
@@ -165,7 +170,7 @@ def segment(file):
     # cv2.waitKey(0)
     # cv2.destroyWindow("original image")
 
-    result = RemoveStructure(img, 0)
+    result = RemoveStructure(img, 1)
 
     # cv2.imshow("result", result)
     # cv2.waitKey(0)
@@ -189,8 +194,10 @@ def segment(file):
     # cv2.destroyWindow('edged')
 
     Coords = findContourBoxes(edged, im_copy)
-    #cv2.imshow('contours', im_copy)
+    cv2.imshow('contours', im_copy)
+    cv2.waitKey(0)
     Coords = drawGroupContours(Coords, img)
+    print(Coords)
     cv2.imshow('grouped contours', img)
     cv2.waitKey(0)
     cv2.destroyWindow('grouped contours')
@@ -207,4 +214,4 @@ def segment(file):
 
     return resized_imgs
 
-#segment('croppedinput.jpg')
+segment('Images/math4.jpg')

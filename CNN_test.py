@@ -10,10 +10,10 @@ import ImageSegmentationModule as sg
 
 
 #testing with image data
-image = sg.segment('croppedinput.jpg')
-image = np.array(image)/255
-model = keras.models.load_model('CNN')
-print(model.predict(image).argmax(axis = 1))
+# image = sg.segment('croppedinput.jpg')
+# image = np.array(image)/255
+# model = keras.models.load_model('CNN')
+# print(model.predict(image).argmax(axis = 1))
 
 # Load the MNIST dataset
 (x_train, y_train), (x_test, y_test) = keras.datasets.mnist.load_data()
