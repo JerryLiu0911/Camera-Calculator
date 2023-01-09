@@ -131,8 +131,7 @@ class GUI(Screen):
         print(inputdata.shape)
         model = keras.models.load_model('CNN')
         y_predicted = model.predict(inputdata)
-        for output in y_predicted:
-            print(np.argmax(output))
+        print(y_predicted.argmax(axis=1))
 
 
 class CamCalc(MDApp):

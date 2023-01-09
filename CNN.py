@@ -7,8 +7,10 @@ import cv2
 
 (x_train, y_train), (x_test, y_test) = keras.datasets.mnist.load_data()
 print(np.shape(x_train))
-x_train = x_train/255
-x_test = x_test/255
+# x_train = np.array([cv2.resize(img, (50,50)) for img in x_train ])
+# x_test = np.array([cv2.resize(img, (50,50)) for img in x_test ])
+x_train = x_train / 255
+x_test = x_test / 255
 
 # x_train_flattened = x_train.reshape(len(x_train),784)
 # print(x_train_flattened.shape)
@@ -17,11 +19,11 @@ x_test = x_test/255
 # Create the model
 model = keras.Sequential([
     keras.layers.Conv2D(32, (3, 3), activation='relu', input_shape=(28, 28, 1)),
-    keras.layers.MaxPooling2D((2,2)),
-    keras.layers.Conv2D(64, (3,3), activation = 'relu'),
-    keras.layers.MaxPooling2D((2,2)),
+    keras.layers.MaxPooling2D((2, 2)),
+    keras.layers.Conv2D(64, (3, 3), activation='relu'),
+    keras.layers.MaxPooling2D((2, 2)),
     keras.layers.Flatten(),
-    keras.layers.Dense(10,activation = 'softmax')
+    keras.layers.Dense(10, activation='softmax')
 ])
 
 # Compile the model

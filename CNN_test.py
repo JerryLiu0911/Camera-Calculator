@@ -10,16 +10,16 @@ import ImageSegmentationModule as sg
 
 
 #testing with image data
-# image = sg.segment('croppedinput.jpg')
-# image = np.array(image)/255
-# model = keras.models.load_model('CNN')
-# print(model.predict(image).argmax(axis = 1))
+image = sg.segment('Images/math4.jpg')
+image = np.array(image)/255
+model = keras.models.load_model('CNN')
+print(model.predict(image).argmax(axis = 1))
 
 # Load the MNIST dataset
 (x_train, y_train), (x_test, y_test) = keras.datasets.mnist.load_data()
 
 # Normalize the input images
-x_train = x_train / 255.0
+#x_test = np.array([cv2.resize(img, (50,50)) for img in x_test ])
 x_test = x_test / 255.0
 
 for i in range(0, 10):
