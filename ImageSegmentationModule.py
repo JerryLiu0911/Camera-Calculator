@@ -138,15 +138,30 @@ def drawGroupContours(Coords, img):
 def cropContourBoxes(coords, img):
     img_list = []
     coords = sorted(coords, key=lambda x: (x[0]))
+    print('thresh = ', img.shape[0] * img.shape[1] / 70)
     for box in coords:
         symbol = img[box[1]:box[1] + box[3], box[0]:box[0] + box[2]]
-        symbol = cv2.morphologyEx(symbol, cv2.MORPH_CLOSE, np.ones((3, 3), np.uint8))
-        symbol = cv2.morphologyEx(symbol, cv2.MORPH_OPEN, np.ones((3, 3), np.uint8))
+        if symbol.shape[0] * symbol.shape[1] <= img.shape[0] * img.shape[1] / 70 or sum(sum(s) for s in symbol)/255 > 0.7 * \
+                symbol.shape[0] * symbol.shape[1]:
+            print(symbol)
+            print('symbol no. = ', coords.index(box))
+            print("symbol shape = ", symbol.shape)
+            print("symbol area = ", symbol.shape[0] * symbol.shape[1])
+            print("colour density = ", (sum(sum(s) for s in symbol)/255) / (symbol.shape[0] * symbol.shape[1]))
+            print("coloured area = ", sum(sum(s) for s in symbol)/255)
+            print("yeah this shit gotta be eroded")
+            symbol = cv2.erode(symbol, np.ones((3, 3), np.uint8))
+        elif symbol.shape[0] * symbol.shape[1] >= img.shape[0] * img.shape[1] / 20 and sum(
+                sum(s) for s in symbol) < 0.3 * symbol.shape[0] * symbol.shape[1]:
+            print("yeah this shit gotta be dilated")
+            symbol = cv2.dilate(symbol, np.ones((3, 3), np.uint8))
+        # symbol = cv2.morphologyEx(symbol, cv2.MORPH_CLOSE, np.ones((3, 3), np.uint8))
+        # symbol = cv2.morphologyEx(symbol, cv2.MORPH_OPEN, np.ones((3, 3), np.uint8))
         img_list.append(symbol)
         # visualize cropped images
-        # cv2.imshow("Cropped_image", symbol)
-        # cv2.waitKey(0)
-        # cv2.destroyWindow("Cropped_image")
+        cv2.imshow("Cropped_image", symbol)
+        cv2.waitKey(0)
+        cv2.destroyWindow("Cropped_image")
     return img_list
 
 
@@ -206,8 +221,9 @@ def segment(file):
     # cv2.waitKey(0)
     # cv2.destroyWindow("original image")
 
-    result = removeStructure(img, 1)
-    direction = getDirection(result, im_copy)
+    #result = removeStructure(img, 1)
+    direction = 1
+    #direction = getDirection(result, im_copy)
     print(direction)
     result = removeStructure(result, direction)
 
