@@ -1,10 +1,34 @@
-import tensorflow
+import tensorflow as tf
 from tensorflow import keras
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import cv2
+import pathlib
 
+data_dir = pathlib.Path('C:/Users/jerry/Downloads/traindata/dataset')
+image_count = len(list(data_dir.glob('*/*.*')))
+print("Total no of images =",image_count)
+#print("image size = ",data_dir.glob('*/*.*').shape)
+#img_shape = data_dir.glob('*/*.*').shape
+# splitting data
+train_ds = keras.preprocessing.image_dataset_from_directory(
+  data_dir,
+  #color_mode="grayscale",
+  validation_split=0.2,
+  subset="training",
+  seed=123,
+  image_size=(400,400),
+  )
+test_ds = keras.preprocessing.image_dataset_from_directory(
+    data_dir,
+    validation_split=0.2,
+    subset = "testing",
+    seed = 123,
+    image_size=(400,400)
+)
+
+print(train_ds.class_names)
 (x_train, y_train), (x_test, y_test) = keras.datasets.mnist.load_data()
 print(np.shape(x_train))
 # x_train = np.array([cv2.resize(img, (50,50)) for img in x_train ])
@@ -33,7 +57,7 @@ model.compile(optimizer='adam',
 
 # Train the model
 model.fit(x_train, y_train, epochs=5)
-model.save('CNN')
+#model.save('CNN')
 
 # model = keras.models.load_model('CNN')
 # y_predicted = model.predict(x_test_flattened)
