@@ -10,7 +10,7 @@ import ImageSegmentationModule as sg
 
 
 #testing with image data
-image = sg.segment('Images/math4.jpg')
+image = sg.segment('croppedinput.jpg')
 image = np.array(image)/255
 model = keras.models.load_model('CNN')
 print(model.predict(image).argmax(axis = 1))

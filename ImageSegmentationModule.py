@@ -1,8 +1,10 @@
 import cv2
 import numpy as np
 import math
+import pathlib
 
-#tf.compat.v1.enable_eager_execution()
+
+# tf.compat.v1.enable_eager_execution()
 
 # contrast = 1.5  # Contrast control (1.0-3.0)
 # brightness = 0  # Brightness control (0-100)
@@ -15,7 +17,7 @@ import math
 def removeStructure(img, direction):
     # performs an 'opening' transformation (erosion followed by dilation) to the img to further remove noise)
     img = cv2.morphologyEx(img, cv2.MORPH_OPEN, np.ones((5, 5), np.uint8))
-    vertical_size = img.shape[0] // 3
+    vertical_size = img.shape[0]//1
     vertical_kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (1, vertical_size))
     vertical_mask = 255 - cv2.morphologyEx(img, cv2.MORPH_CLOSE, vertical_kernel)
 
@@ -35,9 +37,9 @@ def removeStructure(img, direction):
     else:
         result = just_horizontal
 
-    # cv2.imshow("extracted features", features)
-    # cv2.waitKey(0)
-    # cv2.destroyWindow("extracted features")
+    cv2.imshow("extracted features", vertical_extract)
+    cv2.waitKey(0)
+    cv2.destroyWindow("extracted features")
 
     # result = cv2.addWeighted(just_horizontal, 1, just_vertical, 0, 0) placeholder values
     return result
@@ -90,18 +92,18 @@ def findContourBoxes(edged, im_copy):
     area = sorted(area)
     areaMean = np.mean(area)  # average area
     areaSD = np.std(area)  # standard deviation of area
-    #print("average area =", areaMean)
-    #print("areaSD = ", areaSD)
+    # print("average area =", areaMean)
+    # print("areaSD = ", areaSD)
     for ctr in contours:
         x, y, w, h = cv2.boundingRect(ctr)
         area = w * h
         if area >= areaMean / 20:  # and area <= areaMean*10):
-            #cv2.rectangle(im_copy, (x, y), (x + w, y + h), (0, 0, 255), 2)
+            # cv2.rectangle(im_copy, (x, y), (x + w, y + h), (0, 0, 255), 2)
             coords.append([x, y, w, h])
-            #print(counter)
+            # print(counter)
             counter += 1
     Coords = sorted(coords, key=lambda x: (x[0]))
-    #print(Coords)
+    # print(Coords)
 
     return Coords
 
@@ -116,7 +118,7 @@ def drawGroupContours(Coords):
     Coords.remove(Coords[0])
     for i in range(0, len(Coords)):
         box = Coords[0]
-        #print('new length = ', Coords)
+        # print('new length = ', Coords)
         if (groupedCoords[-1][0] <= box[0] <= groupedCoords[-1][0] + groupedCoords[-1][2]) or (
                 groupedCoords[-1][0] <= box[0] + box[2] <= groupedCoords[-1][0] + groupedCoords[-1][2]):
             overlap = getOverlap(groupedCoords[-1], box)
@@ -133,7 +135,7 @@ def drawGroupContours(Coords):
                 groupedCoords.append(box)
         else:
             groupedCoords.append(box)
-            #print('box appended = ', box)
+            # print('box appended = ', box)
         Coords.remove(box)
     # for sortedBox in groupedCoords:
     #     cv2.rectangle(img, (sortedBox[0], sortedBox[1]), (sortedBox[0] + sortedBox[2], sortedBox[1] + sortedBox[3]),
@@ -144,7 +146,7 @@ def drawGroupContours(Coords):
 def cropContourBoxes(coords, img):
     img_list = []
     coords = sorted(coords, key=lambda x: (x[0]))
-    #print('thresh = ', img.shape[0] * img.shape[1] / 70)
+    # print('thresh = ', img.shape[0] * img.shape[1] / 70)
     for box in coords:
         symbol = img[box[1]:box[1] + box[3], box[0]:box[0] + box[2]]
         # if symbol.shape[0] * symbol.shape[1] <= img.shape[0] * img.shape[1] / 60 or sum(sum(s) for s in symbol)/255 > 0.3 * \
@@ -233,9 +235,9 @@ def segment(file):
     print(direction)
     result = removeStructure(result, direction)
 
-    # cv2.imshow("result", result)
-    # cv2.waitKey(0)
-    # cv2.destroyWindow("result")
+    cv2.imshow("result", result)
+    cv2.waitKey(0)
+    cv2.destroyWindow("result")
 
     # Converting to greyscale
     gray = cv2.cvtColor(result, cv2.COLOR_BGR2GRAY)
@@ -245,9 +247,9 @@ def segment(file):
     # experimenting with thresholding functions
     thresh = cv2.threshold(blur, 0, 255, cv2.THRESH_OTSU | cv2.THRESH_BINARY_INV)[1]
 
-    # cv2.imshow("thresh", thresh)
-    # cv2.waitKey(0)
-    # cv2.destroyWindow('thresh')
+    cv2.imshow("thresh", thresh)
+    cv2.waitKey(0)
+    cv2.destroyWindow('thresh')
 
     edged = cv2.Canny(thresh, 70, 200)
 
@@ -268,37 +270,63 @@ def segment(file):
     # resized_imgs = resize(resized_imgs, 100)
     print(len(coords))
     print(coords)
-    centroid = [((x+w)/2,(y+h)/2) for coord in coords for x,y,w,h in coord ]
+    centroids = []
+    for coord in coords:
+        x,y,w,h = coord
+        centroids.append(((x + w) / 2, (y + h) / 2))
+        cv2.circle(initial,(math.floor( x + w/2), math.floor(y + h / 2)),10, (255,0,0),5 )
+    cv2.imshow('centroids', initial)
+    cv2.waitKey(0)
+    print(centroids)
     for img in imglist:
         print(img.shape)
     for img in resized_imgs:
         cv2.imshow('input', img)
         cv2.waitKey(0)
-        #cv2.imwrite('images_test/input1', img)
+        # cv2.imwrite('images_test/input1', img)
     return resized_imgs
 
 
 def segmentDataset(img):
     im_copy = img
     img = removeStructure(img, 1)
+    cv2.imshow('result',img)
+    cv2.waitKey(0)
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
     blur = cv2.bilateralFilter(gray, 5, 75, 75)
     thresh = cv2.threshold(blur, 0, 255, cv2.THRESH_OTSU | cv2.THRESH_BINARY_INV)[1]
     edged = cv2.Canny(thresh, 70, 200)
     coords = findContourBoxes(edged, im_copy)
-    coords = drawGroupContours(coords, img)
+    coords = drawGroupContours(coords)
     img_list = cropContourBoxes(coords, thresh)
     resized_imgs = resize(img_list, 28)
-    #resized_imgs = tf.cast(resized_imgs, tf.float_32)/255.0
+    # resized_imgs = tf.cast(resized_imgs, tf.float_32)/255.0
     return resized_imgs
 
 
-resized_imgs = segment('Images/math4.jpg')
-print(len(resized_imgs))
-for i in range(0,len(resized_imgs)):
-    cv2.imwrite('test_data/%s.jpg'%i, resized_imgs[i])
-    print("saved")
-cv2.imshow('saved', cv2.imread('test_data/0.jpg'))
+data_dir = pathlib.Path('C:/Users/jerry/Downloads/traindata/dataset')
+folders = list(data_dir.glob('*'))[1:]
+print(folders)
+classnames = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'add', 'dec', 'div', 'eq', 'mul', 'sub', 'x', 'y', 'z']
+# for i in range(0, len(classnames)):
+#     for img in list(data_dir.glob(classnames[i]+'/*'))[:3]:
+#         img = cv2.imread(str(img))
+#         cv2.imshow(classnames[i],img)
+#         cv2.waitKey(0)
+digits = list(data_dir.glob('1/*.png'))
+cv2.imshow('og',cv2.imread(str(digits[0])))
 cv2.waitKey(0)
-# segment('Images/math3.jpg')
+resized_imgs = segmentDataset(cv2.imread(str(digits[0])))
+for img in resized_imgs:
+    cv2.imshow('9',img)
+    cv2.waitKey(0)
+# resized_imgs = segment('Images/math4.jpg')
+# print(len(resized_imgs))
+#
+# for i in range(0, len(resized_imgs)):
+#     cv2.imwrite('test_data/%s.png' % i, resized_imgs[i])
+#     print("saved")
+# cv2.imshow('saved', cv2.imread('test_data/0.jpg'))
+# cv2.waitKey(0)
+#segment('croppedinput.jpg')
 # [4 7 7 1 6 6 2 2 3]s
