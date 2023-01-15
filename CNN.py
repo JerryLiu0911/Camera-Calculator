@@ -6,35 +6,37 @@ import matplotlib.pyplot as plt
 import cv2
 import pathlib
 
-data_dir = pathlib.Path('C:/Users/jerry/Downloads/traindata/dataset')
+data_dir = pathlib.Path('C:/Users/jerry/OneDrive/Documents/GitHub/Camera-Calculator/dataset')
 image_count = len(list(data_dir.glob('*/*.*')))
-print("Total no of images =",image_count)
-#print("image size = ",data_dir.glob('*/*.*').shape)
-#img_shape = data_dir.glob('*/*.*').shape
+print("Total no of images =", image_count)
+# print("image size = ",data_dir.glob('*/*.*').shape)
+# img_shape = data_dir.glob('*/*.*').shape
 # splitting data
 train_ds = keras.preprocessing.image_dataset_from_directory(
-  data_dir,
-  #color_mode="grayscale",
-  validation_split=0.2,
-  subset="training",
-  seed=123,
-  image_size=(400,400),
-  )
-test_ds = keras.preprocessing.image_dataset_from_directory(
+    data_dir,
+    # color_mode="grayscale",
+    validation_split=0.2,
+    subset="training",
+    seed=123,
+    image_size=(50, 50),
+    color_mode='grayscale'
+)
+val_ds = keras.preprocessing.image_dataset_from_directory(
     data_dir,
     validation_split=0.2,
-    subset = "testing",
-    seed = 123,
-    image_size=(400,400)
+    subset="validation",
+    seed=123,
+    image_size=(50, 50),
+    color_mode='grayscale'
 )
 
 print(train_ds.class_names)
-(x_train, y_train), (x_test, y_test) = keras.datasets.mnist.load_data()
-print(np.shape(x_train))
+# (x_train, y_train), (x_test, y_test) = keras.datasets.mnist.load_data()
+# print(np.shape(x_train))
 # x_train = np.array([cv2.resize(img, (50,50)) for img in x_train ])
 # x_test = np.array([cv2.resize(img, (50,50)) for img in x_test ])
-x_train = x_train / 255
-x_test = x_test / 255
+# x_train = x_train / 255
+# x_test = x_test / 255
 
 # x_train_flattened = x_train.reshape(len(x_train),784)
 # print(x_train_flattened.shape)
@@ -42,12 +44,21 @@ x_test = x_test / 255
 
 # Create the model
 model = keras.Sequential([
-    keras.layers.Conv2D(32, (3, 3), activation='relu', input_shape=(28, 28, 1)),
+    # keras.layers.Conv2D(32, (3, 3), activation='relu', input_shape=(28, 28, 1)),
+    # keras.layers.MaxPooling2D((2, 2)),
+    # keras.layers.Conv2D(64, (3, 3), activation='relu'),
+    # keras.layers.MaxPooling2D((2, 2)),
+    # keras.layers.Flatten(),
+    # keras.layers.Dense(10, activation='softmax')
+    keras.layers.Rescaling(1.0 / 255),
+    keras.layers.Conv2D(32, (3, 3), activation='relu', input_shape=(50, 50, 32)),
     keras.layers.MaxPooling2D((2, 2)),
     keras.layers.Conv2D(64, (3, 3), activation='relu'),
     keras.layers.MaxPooling2D((2, 2)),
+    keras.layers.Dense(32, activation='relu'),
     keras.layers.Flatten(),
-    keras.layers.Dense(10, activation='softmax')
+    keras.layers.Dropout(0.5),
+    keras.layers.Dense(16, activation='softmax')
 ])
 
 # Compile the model
@@ -56,8 +67,8 @@ model.compile(optimizer='adam',
               metrics=['accuracy'])
 
 # Train the model
-model.fit(x_train, y_train, epochs=5)
-#model.save('CNN')
+model.fit(train_ds, validation_data= val_ds, epochs=20)
+model.save('CNN_symbols')
 
 # model = keras.models.load_model('CNN')
 # y_predicted = model.predict(x_test_flattened)

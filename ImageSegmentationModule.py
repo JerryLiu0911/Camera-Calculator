@@ -17,7 +17,7 @@ import pathlib
 def removeStructure(img, direction):
     # performs an 'opening' transformation (erosion followed by dilation) to the img to further remove noise)
     img = cv2.morphologyEx(img, cv2.MORPH_OPEN, np.ones((5, 5), np.uint8))
-    vertical_size = img.shape[0]//1
+    vertical_size = img.shape[0] // 3 # should be //3. Change back after dataset mod
     vertical_kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (1, vertical_size))
     vertical_mask = 255 - cv2.morphologyEx(img, cv2.MORPH_CLOSE, vertical_kernel)
 
@@ -25,7 +25,7 @@ def removeStructure(img, direction):
 
     just_vertical = cv2.add(img, vertical_mask)
 
-    horizontal_size = img.shape[1] // 9
+    horizontal_size = img.shape[1] // 9 # should be //9, Change back after dataset mod
     horizontal_kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (horizontal_size, 1))
     horizontal_mask = 255 - cv2.morphologyEx(img, cv2.MORPH_CLOSE, horizontal_kernel)
     just_horizontal = cv2.add(img, horizontal_mask)
@@ -37,9 +37,9 @@ def removeStructure(img, direction):
     else:
         result = just_horizontal
 
-    cv2.imshow("extracted features", vertical_extract)
-    cv2.waitKey(0)
-    cv2.destroyWindow("extracted features")
+    # cv2.imshow("extracted features", vertical_extract)
+    # cv2.waitKey(0)
+    # cv2.destroyWindow("extracted features")
 
     # result = cv2.addWeighted(just_horizontal, 1, just_vertical, 0, 0) placeholder values
     return result
@@ -57,11 +57,11 @@ def getDirection(img, img_copy):
     # experimenting with thresholding functions
     thresh = cv2.threshold(blur, 0, 255, cv2.THRESH_OTSU | cv2.THRESH_BINARY_INV)[1]
 
-    print(img.shape[:3])
+    # print(img.shape[:3])
     lines = cv2.HoughLinesP(thresh, 1, np.pi / 180, 50, minLineLength=min(img.shape[:2]) / 1.5, maxLineGap=5)
     gradients = []
     if lines is not None:
-        print(lines)
+        # print(lines)
         for l in lines:
             for line in l:
                 x1, y1, x2, y2 = line
@@ -76,32 +76,34 @@ def getDirection(img, img_copy):
         direction = 0
     else:
         direction = 1
-    cv2.imshow('detected lines', img_copy)
-    cv2.waitKey(0)
+    # cv2.imshow('detected lines', img_copy)
+    # cv2.waitKey(0)
     return direction
 
 
 def findContourBoxes(edged, im_copy):
     contours, hierarchy = cv2.findContours(edged, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
+    # print(contours)
     counter = 1
     area = []
     coords = []
     for ctr in contours:
         x, y, w, h = cv2.boundingRect(ctr)
         area.append(w * h)
-    area = sorted(area)
     areaMean = np.mean(area)  # average area
-    areaSD = np.std(area)  # standard deviation of area
+    # areaSD = np.std(area)  # standard deviation of area
     # print("average area =", areaMean)
     # print("areaSD = ", areaSD)
     for ctr in contours:
         x, y, w, h = cv2.boundingRect(ctr)
         area = w * h
-        if area >= areaMean / 20:  # and area <= areaMean*10):
-            # cv2.rectangle(im_copy, (x, y), (x + w, y + h), (0, 0, 255), 2)
+        if area >= areaMean / 18:  # / 20 and area <= areaMean*10):
+            cv2.rectangle(im_copy, (x, y), (x + w, y + h), (0, 0, 255), 2)
             coords.append([x, y, w, h])
             # print(counter)
             counter += 1
+    if not coords:
+        return ['error']
     Coords = sorted(coords, key=lambda x: (x[0]))
     # print(Coords)
 
@@ -145,10 +147,12 @@ def drawGroupContours(Coords):
 
 def cropContourBoxes(coords, img):
     img_list = []
+    areas = []
     coords = sorted(coords, key=lambda x: (x[0]))
     # print('thresh = ', img.shape[0] * img.shape[1] / 70)
     for box in coords:
         symbol = img[box[1]:box[1] + box[3], box[0]:box[0] + box[2]]
+        areas.append(box[3]*box[2])
         # if symbol.shape[0] * symbol.shape[1] <= img.shape[0] * img.shape[1] / 60 or sum(sum(s) for s in symbol)/255 > 0.3 * \
         #         symbol.shape[0] * symbol.shape[1]:
         #     print(symbol)
@@ -166,11 +170,12 @@ def cropContourBoxes(coords, img):
         # symbol = cv2.morphologyEx(symbol, cv2.MORPH_CLOSE, np.ones((3, 3), np.uint8))
         # symbol = cv2.morphologyEx(symbol, cv2.MORPH_OPEN, np.ones((3, 3), np.uint8))
         img_list.append(symbol)
+        # print(symbol.shape)
         # visualize cropped images
-        cv2.imshow("Cropped_image", symbol)
-        cv2.waitKey(0)
-        cv2.destroyWindow("Cropped_image")
-    return img_list
+        # cv2.imshow("Cropped_image", symbol)
+        # cv2.waitKey(0)
+        # cv2.destroyWindow("Cropped_image")
+    return img_list, areas
 
 
 def resize(img_list, size):
@@ -219,16 +224,15 @@ def resize(img_list, size):
         resized_imgs.append(resized_img)
     return resized_imgs
 
-
 def segment(file):
     img = cv2.imread(file)
     im_copy = img.copy()
     result = img.copy()
     initial = img.copy()
 
-    # cv2.imshow("original image", img)
-    # cv2.waitKey(0)
-    # cv2.destroyWindow("original image")
+    cv2.imshow("original image", img)
+    cv2.waitKey(0)
+    cv2.destroyWindow("original image")
 
     initial = removeStructure(initial, 1)
     direction = getDirection(initial, im_copy)
@@ -242,10 +246,10 @@ def segment(file):
     # Converting to greyscale
     gray = cv2.cvtColor(result, cv2.COLOR_BGR2GRAY)
     # applying Gaussian blur
-    # blur = cv2.GaussianBlur(gray, (5, 5), 0)
-    blur = cv2.bilateralFilter(gray, 5, 75, 75)
+    blur = cv2.GaussianBlur(gray, (5, 5), 0)
+    # blur = cv2.bilateralFilter(gray, 5, sigmaColor = 0.1,sigmaSpace = 0.1)
     # experimenting with thresholding functions
-    thresh = cv2.threshold(blur, 0, 255, cv2.THRESH_OTSU | cv2.THRESH_BINARY_INV)[1]
+    thresh = cv2.threshold(gray, 0, 255, cv2.THRESH_OTSU | cv2.THRESH_BINARY_INV)[1]
 
     cv2.imshow("thresh", thresh)
     cv2.waitKey(0)
@@ -253,20 +257,20 @@ def segment(file):
 
     edged = cv2.Canny(thresh, 70, 200)
 
-    # cv2.imshow('edged', edged)
-    # cv2.waitKey(0)
-    # cv2.destroyWindow('edged')
+    cv2.imshow('edged', edged)
+    cv2.waitKey(0)
+    cv2.destroyWindow('edged')
 
     coords = findContourBoxes(edged, im_copy)
-    # cv2.imshow('contours', im_copy)
-    # cv2.waitKey(0)
+    cv2.imshow('contours', im_copy)
+    cv2.waitKey(0)
     coords = drawGroupContours(coords)
     print(coords)
     # cv2.imshow('grouped contours', img)
     # cv2.waitKey(0)
     # cv2.destroyWindow('grouped contours')
-    imglist = cropContourBoxes(coords, thresh)
-    resized_imgs = resize(imglist, 28)
+    imglist, areas = cropContourBoxes(coords, thresh)
+    resized_imgs = resize(imglist, 50)
     # resized_imgs = resize(resized_imgs, 100)
     print(len(coords))
     print(coords)
@@ -284,49 +288,82 @@ def segment(file):
         cv2.imshow('input', img)
         cv2.waitKey(0)
         # cv2.imwrite('images_test/input1', img)
-    return resized_imgs
+    return resized_imgs, areas
 
 
 def segmentDataset(img):
     im_copy = img
-    img = removeStructure(img, 1)
-    cv2.imshow('result',img)
-    cv2.waitKey(0)
+    initial = img
+    initial = removeStructure(initial, 1)
+    # cv2.imshow('result',img)
+    # cv2.waitKey(0)
+    direction = getDirection(initial, im_copy)
+    # print(direction)
+    img = removeStructure(img, direction)
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    gray = cv2.erode(gray, np.ones((3, 3), np.uint8))
     blur = cv2.bilateralFilter(gray, 5, 75, 75)
     thresh = cv2.threshold(blur, 0, 255, cv2.THRESH_OTSU | cv2.THRESH_BINARY_INV)[1]
+    thresh = cv2.dilate(thresh, np.ones((3, 3), np.uint8))
     edged = cv2.Canny(thresh, 70, 200)
     coords = findContourBoxes(edged, im_copy)
+    if coords[0] == 'error':
+        return ['error']
+    # cv2.imshow('boxed', im_copy)
+    # cv2.waitKey(0)
     coords = drawGroupContours(coords)
     img_list = cropContourBoxes(coords, thresh)
-    resized_imgs = resize(img_list, 28)
+    resized_imgs = resize(img_list, 50)
     # resized_imgs = tf.cast(resized_imgs, tf.float_32)/255.0
     return resized_imgs
 
 
-data_dir = pathlib.Path('C:/Users/jerry/Downloads/traindata/dataset')
-folders = list(data_dir.glob('*'))[1:]
-print(folders)
-classnames = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'add', 'dec', 'div', 'eq', 'mul', 'sub', 'x', 'y', 'z']
-# for i in range(0, len(classnames)):
-#     for img in list(data_dir.glob(classnames[i]+'/*'))[:3]:
-#         img = cv2.imread(str(img))
-#         cv2.imshow(classnames[i],img)
-#         cv2.waitKey(0)
-digits = list(data_dir.glob('1/*.png'))
-cv2.imshow('og',cv2.imread(str(digits[0])))
-cv2.waitKey(0)
-resized_imgs = segmentDataset(cv2.imread(str(digits[0])))
-for img in resized_imgs:
-    cv2.imshow('9',img)
-    cv2.waitKey(0)
-# resized_imgs = segment('Images/math4.jpg')
-# print(len(resized_imgs))
+# data_dir = pathlib.Path('C:/Users/jerry/Downloads/traindata/dataset')
+# folders = list(data_dir.glob('*'))[1:]
+# # print(folders)
+# # folders = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '+', '', 'eq', 'mul', 'sub', 'x']
+# classnames = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'add', 'div', 'eq', 'mul', 'sub', 'x'] # removed 'dec', 'y', 'z'
 #
+# ''' segmenteing dataset '''
+# for i in range(0, len(classnames)):
+#     k=0
+#     flag = False
+#     for img in list(data_dir.glob(classnames[i]+'/*.png'))+list(data_dir.glob(classnames[i]+'/*.jpg')):
+#         img_path = img
+#         img = cv2.imread(str(img))
+#         #cv2.imshow(str(i), img)
+#         resized_img = segmentDataset(img)
+#         if resized_img[0] == 'error':
+#             print(img_path)
+#             resized_img = segment(img)
+#             flag = True
+#             break
+#         cv2.imwrite('dataset/'+classnames[i]+'/'+str(k)+'.png', resized_img[0])
+#         k += 1
+#     if flag:
+#         break
+
+        # blacklisted images C:\Users\jerry\Downloads\traindata\dataset\x\87omOgfZ.png
+
+''' Check loss '''
+# train_data = pathlib.Path('C:/Users/jerry/OneDrive/Documents/GitHub/Camera-Calculator/dataset')
+# for i in range(0, len(classnames)):
+#     og = len(list(data_dir.glob(classnames[i]+'/*.*'))) # data_dir.glob(classnames[i]+'/*.png'))+list((data_dir.glob(classnames[i]+'/*.jpg'))))
+#     output = len(list(train_data.glob(classnames[i]+'/*.png')))
+#     print('class : ',classnames[i],', no. of lost images = ', og-output)
+
+
+''' individual troubleshooting '''
+# resized_imgs = segment(cv2.imread('C:/Users/jerry/Downloads/traindata/dataset/x/87omOgfZ.png'))
+# cv2.imshow('dec', resized_imgs[0])
+# cv2.waitKey(0)
+
+
 # for i in range(0, len(resized_imgs)):
 #     cv2.imwrite('test_data/%s.png' % i, resized_imgs[i])
 #     print("saved")
 # cv2.imshow('saved', cv2.imread('test_data/0.jpg'))
 # cv2.waitKey(0)
-#segment('croppedinput.jpg')
+
+segment('croppedinput.jpg')
 # [4 7 7 1 6 6 2 2 3]s

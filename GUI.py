@@ -7,7 +7,7 @@ from kivymd.uix.button import MDFillRoundFlatButton
 from kivymd.uix.screen import Screen
 from kivymd.uix.widget import MDWidget
 
-import ImageSegmentationModule
+import ImageSegmentationModule as sg
 from tensorflow import keras
 import numpy as np
 
@@ -125,13 +125,29 @@ class GUI(Screen):
               int(self.crop.cropBox.pos[0]):int(self.crop.cropBox.pos[0] + self.crop.cropBoxWidth)]
         cv2.imwrite('croppedinput.jpg', img)
         print("capture")
-        inputdata = ImageSegmentationModule.segment('croppedinput.jpg')
-        inputdata = np.array(inputdata)/255
-        print(inputdata)
-        print(inputdata.shape)
-        model = keras.models.load_model('CNN')
-        y_predicted = model.predict(inputdata)
-        print(y_predicted.argmax(axis=1))
+        model = keras.models.load_model('CNN_symbols')
+        imgs, areas = sg.segment('croppedinput.jpg')
+        img_array = keras.preprocessing.image.img_to_array(imgs)
+        #  img_array = tf.expand_dims(img_array, 0)
+        predicted_labels = model.predict(img_array)
+        predicted_labels = predicted_labels.argmax(axis=1)
+        classNames = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'add', 'div', 'eq', 'mul', 'sub', 'x']
+        ans = [classNames[i] for i in predicted_labels]
+        symbols = ['add', 'div', 'eq', 'mul', 'sub']
+        for i in range(0, len(ans)):
+            if ans[i] == 'mul' and ans[i + 1] in symbols:
+                ans[i] = 'x'
+            if (ans[i] == '2' or ans =='8') and areas[i] <= np.mean(areas) / 3:
+                ans[i] = 'eq'
+        print(ans)
+
+        # inputdata = sg.segment('croppedinput.jpg')
+        # inputdata = np.array(inputdata)/255
+        # print(inputdata)
+        # print(inputdata.shape)
+        # model = keras.models.load_model('CNN')
+        # y_predicted = model.predict(inputdata)
+        # print(y_predicted.argmax(axis=1))
 
 
 class CamCalc(MDApp):

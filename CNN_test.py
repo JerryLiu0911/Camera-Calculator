@@ -9,6 +9,7 @@ import itertools
 import ImageSegmentationModule as sg
 
 
+
 #testing with image data
 image = sg.segment('croppedinput.jpg')
 image = np.array(image)/255
