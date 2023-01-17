@@ -11,10 +11,23 @@ import ImageSegmentationModule as sg
 
 
 #testing with image data
-image = sg.segment('croppedinput.jpg')
-image = np.array(image)/255
-model = keras.models.load_model('CNN')
-print(model.predict(image).argmax(axis = 1))
+image, areas = sg.segment('Images/math.png', test = True)
+img_array = keras.preprocessing.image.img_to_array(image)
+model = keras.models.load_model('CNN_symbols')
+prediction = model.predict(img_array)
+print(prediction)
+print([max(p) for p in prediction])
+prediction = prediction.argmax(axis = 1)
+classNames = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'add', 'div', 'eq', 'mul', 'sub', 'x']
+ans = [classNames[i] for i in prediction]
+symbols = ['add', 'div', 'eq', 'mul', 'sub']
+for i in range(0,len(ans)):
+    if ans[i]=='mul' and ans[i+1] in symbols:
+        ans[i]='x'
+    if ans[i]=='2' and areas[i]<=np.mean(areas)/3:
+        ans[i]='eq'
+print(ans)
+
 
 # Load the MNIST dataset
 (x_train, y_train), (x_test, y_test) = keras.datasets.mnist.load_data()

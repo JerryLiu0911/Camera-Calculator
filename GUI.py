@@ -126,10 +126,11 @@ class GUI(Screen):
         cv2.imwrite('croppedinput.jpg', img)
         print("capture")
         model = keras.models.load_model('CNN_symbols')
-        imgs, areas = sg.segment('croppedinput.jpg')
+        imgs, areas = sg.segment('croppedinput.jpg', test = True)
         img_array = keras.preprocessing.image.img_to_array(imgs)
         #  img_array = tf.expand_dims(img_array, 0)
         predicted_labels = model.predict(img_array)
+        predicted_values = [max(p) for p in predicted_labels]
         predicted_labels = predicted_labels.argmax(axis=1)
         classNames = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'add', 'div', 'eq', 'mul', 'sub', 'x']
         ans = [classNames[i] for i in predicted_labels]
@@ -140,6 +141,7 @@ class GUI(Screen):
             if (ans[i] == '2' or ans =='8') and areas[i] <= np.mean(areas) / 3:
                 ans[i] = 'eq'
         print(ans)
+        print(predicted_values)
 
         # inputdata = sg.segment('croppedinput.jpg')
         # inputdata = np.array(inputdata)/255

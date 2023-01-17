@@ -14,7 +14,6 @@ print("Total no of images =", image_count)
 # splitting data
 train_ds = keras.preprocessing.image_dataset_from_directory(
     data_dir,
-    # color_mode="grayscale",
     validation_split=0.2,
     subset="training",
     seed=123,
@@ -67,7 +66,7 @@ model.compile(optimizer='adam',
               metrics=['accuracy'])
 
 # Train the model
-model.fit(train_ds, validation_data= val_ds, epochs=20)
+model.fit(train_ds, validation_data= val_ds, epochs=15)
 model.save('CNN_symbols')
 
 # model = keras.models.load_model('CNN')

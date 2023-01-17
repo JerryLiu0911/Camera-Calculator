@@ -1,8 +1,8 @@
 import cv2
 import numpy as np
 import math
+# from tensorflow import keras
 import pathlib
-
 
 # tf.compat.v1.enable_eager_execution()
 
@@ -14,10 +14,10 @@ import pathlib
 
 
 # Remove lines
-def removeStructure(img, direction):
+def removeStructure(img, direction, v_size = 3, h_size = 9):
     # performs an 'opening' transformation (erosion followed by dilation) to the img to further remove noise)
     img = cv2.morphologyEx(img, cv2.MORPH_OPEN, np.ones((5, 5), np.uint8))
-    vertical_size = img.shape[0] // 3 # should be //3. Change back after dataset mod
+    vertical_size = img.shape[0] // v_size # should be //3. Change back after dataset mod
     vertical_kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (1, vertical_size))
     vertical_mask = 255 - cv2.morphologyEx(img, cv2.MORPH_CLOSE, vertical_kernel)
 
@@ -25,7 +25,7 @@ def removeStructure(img, direction):
 
     just_vertical = cv2.add(img, vertical_mask)
 
-    horizontal_size = img.shape[1] // 9 # should be //9, Change back after dataset mod
+    horizontal_size = img.shape[1] // h_size # should be //9, Change back after dataset mod
     horizontal_kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (horizontal_size, 1))
     horizontal_mask = 255 - cv2.morphologyEx(img, cv2.MORPH_CLOSE, horizontal_kernel)
     just_horizontal = cv2.add(img, horizontal_mask)
@@ -45,7 +45,7 @@ def removeStructure(img, direction):
     return result
 
 
-def getDirection(img, img_copy):
+def getDirection(img, img_copy, threshold = 1.5):
     # initial guess
     direction = 1
     img = removeStructure(img, direction)
@@ -58,7 +58,7 @@ def getDirection(img, img_copy):
     thresh = cv2.threshold(blur, 0, 255, cv2.THRESH_OTSU | cv2.THRESH_BINARY_INV)[1]
 
     # print(img.shape[:3])
-    lines = cv2.HoughLinesP(thresh, 1, np.pi / 180, 50, minLineLength=min(img.shape[:2]) / 1.5, maxLineGap=5)
+    lines = cv2.HoughLinesP(thresh, 1, np.pi / 180, 50, minLineLength=min(img.shape[:2]) / threshold, maxLineGap=5)
     gradients = []
     if lines is not None:
         # print(lines)
@@ -81,7 +81,7 @@ def getDirection(img, img_copy):
     return direction
 
 
-def findContourBoxes(edged, im_copy):
+def findContourBoxes(edged, im_copy, threshold = 22):
     contours, hierarchy = cv2.findContours(edged, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
     # print(contours)
     counter = 1
@@ -97,7 +97,7 @@ def findContourBoxes(edged, im_copy):
     for ctr in contours:
         x, y, w, h = cv2.boundingRect(ctr)
         area = w * h
-        if area >= areaMean / 18:  # / 20 and area <= areaMean*10):
+        if area >= areaMean / threshold:  # / 20 and area <= areaMean*10):
             cv2.rectangle(im_copy, (x, y), (x + w, y + h), (0, 0, 255), 2)
             coords.append([x, y, w, h])
             # print(counter)
@@ -114,34 +114,43 @@ def getOverlap(box1, box2):
     return min([box2[0] + box2[2] - box1[0], box1[0] + box1[2] - box2[0]])
 
 
-def drawGroupContours(Coords):
+def drawGroupContours(Coords,img, threshold = 5, groupAll = False):
     Coords = sorted(Coords, key=lambda x: (x[0]))
-    groupedCoords = [Coords[0]]
-    Coords.remove(Coords[0])
-    for i in range(0, len(Coords)):
-        box = Coords[0]
-        # print('new length = ', Coords)
-        if (groupedCoords[-1][0] <= box[0] <= groupedCoords[-1][0] + groupedCoords[-1][2]) or (
-                groupedCoords[-1][0] <= box[0] + box[2] <= groupedCoords[-1][0] + groupedCoords[-1][2]):
-            overlap = getOverlap(groupedCoords[-1], box)
-            if (overlap >= groupedCoords[-1][2] / 10 or ((groupedCoords[-1][0] <= box[0] <= groupedCoords[-1][0] +
-                                                          groupedCoords[-1][2]) and (
-                                                                 groupedCoords[-1][0] <= box[0] + box[2] <=
-                                                                 groupedCoords[-1][0] + groupedCoords[-1][2]))):
-                groupedCoords[-1] = [min(groupedCoords[-1][0], box[0]), min(groupedCoords[-1][1], box[1]),
-                                     max(groupedCoords[-1][2], box[0] + box[2] - groupedCoords[-1][0]),
-                                     max(groupedCoords[-1][3], box[1] + box[3] - groupedCoords[-1][1],
-                                         groupedCoords[-1][1] +
-                                         groupedCoords[-1][3] - box[1])]
+    if groupAll:
+        min_x = Coords[0][0]
+        min_y = sorted(Coords, key=lambda x: (x[1]))[0][1]
+        groupedCoords = [[min_x,
+                          min_y,
+                          max([c[0]+c[2] for c in Coords])-min_x,
+                          max([c[1] + c[3] for c in Coords]) - min_y]]
+    else:
+        groupedCoords = [Coords[0]]
+        Coords.remove(Coords[0])
+        for i in range(0, len(Coords)):
+            box = Coords[0]
+            # print('new length = ', Coords)
+            if (groupedCoords[-1][0] <= box[0] <= groupedCoords[-1][0] + groupedCoords[-1][2]) or (
+                    groupedCoords[-1][0] <= box[0] + box[2] <= groupedCoords[-1][0] + groupedCoords[-1][2]):
+                overlap = getOverlap(groupedCoords[-1], box)
+                if (overlap >= groupedCoords[-1][2] / threshold or ((groupedCoords[-1][0] <= box[0] <= groupedCoords[-1][0] +
+                                                              groupedCoords[-1][2]) and (
+                                                                     groupedCoords[-1][0] <= box[0] + box[2] <=
+                                                                     groupedCoords[-1][0] + groupedCoords[-1][2]))):
+                    groupedCoords[-1] = [min(groupedCoords[-1][0], box[0]), min(groupedCoords[-1][1], box[1]),
+                                         max(groupedCoords[-1][2], box[0] + box[2] - groupedCoords[-1][0]),
+                                         max(groupedCoords[-1][3], box[1] + box[3] - groupedCoords[-1][1],
+                                             groupedCoords[-1][1] +
+                                             groupedCoords[-1][3] - box[1])]
+                else:
+                    groupedCoords.append(box)
             else:
                 groupedCoords.append(box)
-        else:
-            groupedCoords.append(box)
-            # print('box appended = ', box)
-        Coords.remove(box)
-    # for sortedBox in groupedCoords:
-    #     cv2.rectangle(img, (sortedBox[0], sortedBox[1]), (sortedBox[0] + sortedBox[2], sortedBox[1] + sortedBox[3]),
-    #                   (255, 255, 255), 2)
+                # print('box appended = ', box)
+            Coords.remove(box)
+    for sortedBox in groupedCoords:
+            cv2.rectangle(img, (sortedBox[0], sortedBox[1]), (sortedBox[0] + sortedBox[2], sortedBox[1] + sortedBox[3]),
+                          (0, 0, 255), 2)
+
     return groupedCoords
 
 
@@ -224,146 +233,129 @@ def resize(img_list, size):
         resized_imgs.append(resized_img)
     return resized_imgs
 
-def segment(file):
+def segment(file, test = False):
     img = cv2.imread(file)
     im_copy = img.copy()
     result = img.copy()
     initial = img.copy()
 
-    cv2.imshow("original image", img)
-    cv2.waitKey(0)
-    cv2.destroyWindow("original image")
+    if test:
+        cv2.imshow("original image", img)
+        cv2.waitKey(0)
+        cv2.destroyWindow("original image")
 
     initial = removeStructure(initial, 1)
     direction = getDirection(initial, im_copy)
     print(direction)
     result = removeStructure(result, direction)
 
-    cv2.imshow("result", result)
-    cv2.waitKey(0)
-    cv2.destroyWindow("result")
-
     # Converting to greyscale
     gray = cv2.cvtColor(result, cv2.COLOR_BGR2GRAY)
-    # applying Gaussian blur
-    blur = cv2.GaussianBlur(gray, (5, 5), 0)
-    # blur = cv2.bilateralFilter(gray, 5, sigmaColor = 0.1,sigmaSpace = 0.1)
-    # experimenting with thresholding functions
-    thresh = cv2.threshold(gray, 0, 255, cv2.THRESH_OTSU | cv2.THRESH_BINARY_INV)[1]
 
-    cv2.imshow("thresh", thresh)
-    cv2.waitKey(0)
-    cv2.destroyWindow('thresh')
+    # clahe = cv2.createCLAHE(clipLimit=8.0, tileGridSize=(20, 20))
+
+    # Apply CLAHE to the image
+    # result = clahe.apply(gray)
+
+    if test:
+        cv2.imshow("result", result)
+        cv2.waitKey(0)
+        cv2.destroyWindow("result")
+    # applying Gaussian blur
+    # blur = cv2.GaussianBlur(gray, (5, 5), 0)
+    blur = cv2.bilateralFilter(gray, 3, 75, 75)
+    if test:
+        cv2.imshow('blur', blur)
+        cv2.waitKey(0)
+    # experimenting with thresholding functions
+    thresh = cv2.threshold(blur, 0, 255, cv2.THRESH_OTSU | cv2.THRESH_BINARY_INV)[1]
+
+    if test:
+        cv2.imshow("thresh", thresh)
+        cv2.waitKey(0)
+        cv2.destroyWindow('thresh')
 
     edged = cv2.Canny(thresh, 70, 200)
 
-    cv2.imshow('edged', edged)
-    cv2.waitKey(0)
-    cv2.destroyWindow('edged')
+    if test:
+        cv2.imshow('edged', edged)
+        cv2.waitKey(0)
+        cv2.destroyWindow('edged')
 
-    coords = findContourBoxes(edged, im_copy)
-    cv2.imshow('contours', im_copy)
-    cv2.waitKey(0)
-    coords = drawGroupContours(coords)
-    print(coords)
+    coords = findContourBoxes(edged, initial, 30)
+    if test:
+        cv2.imshow('contours', im_copy)
+        cv2.waitKey(0)
+    coords = drawGroupContours(coords, img)
     # cv2.imshow('grouped contours', img)
     # cv2.waitKey(0)
     # cv2.destroyWindow('grouped contours')
     imglist, areas = cropContourBoxes(coords, thresh)
     resized_imgs = resize(imglist, 50)
     # resized_imgs = resize(resized_imgs, 100)
-    print(len(coords))
-    print(coords)
+    # print(len(coords))
+    # print(coords)
     centroids = []
     for coord in coords:
         x,y,w,h = coord
         centroids.append(((x + w) / 2, (y + h) / 2))
         cv2.circle(initial,(math.floor( x + w/2), math.floor(y + h / 2)),10, (255,0,0),5 )
-    cv2.imshow('centroids', initial)
-    cv2.waitKey(0)
-    print(centroids)
-    for img in imglist:
-        print(img.shape)
-    for img in resized_imgs:
-        cv2.imshow('input', img)
+    if test:
+        cv2.imshow('centroids', initial)
         cv2.waitKey(0)
-        # cv2.imwrite('images_test/input1', img)
+    # print(centroids)
+    if test:
+        for img in imglist:
+            print(img.shape)
+        for img in resized_imgs:
+            cv2.imshow('input', img)
+            cv2.waitKey(0)
+            # cv2.imwrite('images_test/input1', img)
     return resized_imgs, areas
 
 
-def segmentDataset(img):
+def segmentDataset(img, test = False, groupAll = False):
+    img = cv2.erode(img, np.ones((3, 3), np.uint8))
     im_copy = img
     initial = img
-    initial = removeStructure(initial, 1)
-    # cv2.imshow('result',img)
-    # cv2.waitKey(0)
-    direction = getDirection(initial, im_copy)
-    # print(direction)
-    img = removeStructure(img, direction)
+    initial = removeStructure(initial, 1, 1, 1)
+    if test:
+        cv2.imshow('initial', initial)
+        cv2.waitKey(0)
+    direction = getDirection(initial, im_copy, threshold = 1)
+    if test:
+        print('direction : ',direction)
+    # img = removeStructure(img, direction, 1, 1)
+    if test:
+        cv2.imshow('result',img)
+        cv2.waitKey(0)
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
     gray = cv2.erode(gray, np.ones((3, 3), np.uint8))
     blur = cv2.bilateralFilter(gray, 5, 75, 75)
     thresh = cv2.threshold(blur, 0, 255, cv2.THRESH_OTSU | cv2.THRESH_BINARY_INV)[1]
-    thresh = cv2.dilate(thresh, np.ones((3, 3), np.uint8))
+    if test:
+        cv2.imshow('thresh', thresh)
+        cv2.waitKey(0)
     edged = cv2.Canny(thresh, 70, 200)
-    coords = findContourBoxes(edged, im_copy)
+    if test:
+        cv2.imshow('edged', edged)
+        cv2.waitKey(0)
+    coords = findContourBoxes(edged, im_copy, 100)
+    if test:
+        cv2.imshow('contours', im_copy)
+        cv2.waitKey(0)
     if coords[0] == 'error':
         return ['error']
-    # cv2.imshow('boxed', im_copy)
-    # cv2.waitKey(0)
-    coords = drawGroupContours(coords)
-    img_list = cropContourBoxes(coords, thresh)
+    coords = drawGroupContours(coords,initial, 100, groupAll)
+    if test:
+        cv2.imshow('grouped', initial)
+        cv2.waitKey(0)
+    img_list, areas = cropContourBoxes(coords, thresh)
     resized_imgs = resize(img_list, 50)
-    # resized_imgs = tf.cast(resized_imgs, tf.float_32)/255.0
+    if test:
+        for img in resized_imgs:
+            cv2.imshow('input', img)
+            cv2.waitKey(0)
     return resized_imgs
 
-
-# data_dir = pathlib.Path('C:/Users/jerry/Downloads/traindata/dataset')
-# folders = list(data_dir.glob('*'))[1:]
-# # print(folders)
-# # folders = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '+', '', 'eq', 'mul', 'sub', 'x']
-# classnames = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'add', 'div', 'eq', 'mul', 'sub', 'x'] # removed 'dec', 'y', 'z'
-#
-# ''' segmenteing dataset '''
-# for i in range(0, len(classnames)):
-#     k=0
-#     flag = False
-#     for img in list(data_dir.glob(classnames[i]+'/*.png'))+list(data_dir.glob(classnames[i]+'/*.jpg')):
-#         img_path = img
-#         img = cv2.imread(str(img))
-#         #cv2.imshow(str(i), img)
-#         resized_img = segmentDataset(img)
-#         if resized_img[0] == 'error':
-#             print(img_path)
-#             resized_img = segment(img)
-#             flag = True
-#             break
-#         cv2.imwrite('dataset/'+classnames[i]+'/'+str(k)+'.png', resized_img[0])
-#         k += 1
-#     if flag:
-#         break
-
-        # blacklisted images C:\Users\jerry\Downloads\traindata\dataset\x\87omOgfZ.png
-
-''' Check loss '''
-# train_data = pathlib.Path('C:/Users/jerry/OneDrive/Documents/GitHub/Camera-Calculator/dataset')
-# for i in range(0, len(classnames)):
-#     og = len(list(data_dir.glob(classnames[i]+'/*.*'))) # data_dir.glob(classnames[i]+'/*.png'))+list((data_dir.glob(classnames[i]+'/*.jpg'))))
-#     output = len(list(train_data.glob(classnames[i]+'/*.png')))
-#     print('class : ',classnames[i],', no. of lost images = ', og-output)
-
-
-''' individual troubleshooting '''
-# resized_imgs = segment(cv2.imread('C:/Users/jerry/Downloads/traindata/dataset/x/87omOgfZ.png'))
-# cv2.imshow('dec', resized_imgs[0])
-# cv2.waitKey(0)
-
-
-# for i in range(0, len(resized_imgs)):
-#     cv2.imwrite('test_data/%s.png' % i, resized_imgs[i])
-#     print("saved")
-# cv2.imshow('saved', cv2.imread('test_data/0.jpg'))
-# cv2.waitKey(0)
-
-segment('croppedinput.jpg')
-# [4 7 7 1 6 6 2 2 3]s
+segment('Images\math.png', test = True)
