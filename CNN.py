@@ -50,24 +50,41 @@ model = keras.Sequential([
     # keras.layers.Flatten(),
     # keras.layers.Dense(10, activation='softmax')
     keras.layers.Rescaling(1.0 / 255),
-    keras.layers.Conv2D(32, (3, 3), activation='relu', input_shape=(50, 50, 32)),
+    keras.layers.Conv2D(6, (5,5) , activation='relu', input_shape=(32, 32, 32)),
     keras.layers.MaxPooling2D((2, 2)),
-    keras.layers.Conv2D(64, (3, 3), activation='relu'),
+    keras.layers.Conv2D(16, (5, 5), strides = 2, activation='relu'),
     keras.layers.MaxPooling2D((2, 2)),
-    keras.layers.Dense(32, activation='relu'),
     keras.layers.Flatten(),
+    keras.layers.Dense(200, activation='relu'),
     keras.layers.Dropout(0.5),
+    keras.layers.Dense(100, activation='relu'),
+    keras.layers.Dropout(0.3),
+    keras.layers.Dense(60, activation = 'relu'),
+    keras.layers.Dropout(0.2),
     keras.layers.Dense(16, activation='softmax')
 ])
 
 # Compile the model
 model.compile(optimizer='adam',
-              loss='sparse_categorical_crossentropy',
+              loss= 'sparse_categorical_crossentropy',
               metrics=['accuracy'])
 
 # Train the model
-model.fit(train_ds, validation_data= val_ds, epochs=15)
-model.save('CNN_symbols')
+model.fit(train_ds, validation_data= val_ds, epochs=20, callbacks= keras.callbacks.EarlyStopping(patience=2))
+model.save('CNN')
+
+
+# 223/223 [==============================] - 11s 47ms/step - loss: 0.2367 - accuracy: 0.9308 - val_loss: 0.1618 - val_accuracy: 0.9545
+
+# Epoch 15/15 (32,32)
+# 223/223 [==============================] - 3s 12ms/step - loss: 0.2562 - accuracy: 0.9249 - val_loss: 0.1932 - val_accuracy: 0.9433
+
+
+# Epoch 15/15 (50,50) Dense : 120,84
+# 223/223 [==============================] - 4s 17ms/step - loss: 0.1825 - accuracy: 0.9491 - val_loss: 0.1477 - val_accuracy: 0.9590
+
+# Epoch 15/15 (50,50) Dense : 200,100
+# 223/223 [==============================] - 5s 20ms/step - loss: 0.1279 - accuracy: 0.9596 - val_loss: 0.1419 - val_accuracy: 0.9630
 
 # model = keras.models.load_model('CNN')
 # y_predicted = model.predict(x_test_flattened)

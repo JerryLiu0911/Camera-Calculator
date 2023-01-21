@@ -1,13 +1,14 @@
 import ImageSegmentationModule as sg
 import pathlib
+import matplotlib.pyplot as plt
 import cv2
 import ntpath
+import random
 
 # data_dir = pathlib.Path('C:/Users/jerry/OneDrive/Documents/GitHub/Camera-Calculator/dataset')
 data_dir = pathlib.Path('C:/Users/jerry/Downloads/traindata/dataset')
 # folders = list(data_dir.glob('*'))[1:]
 # print(folders)
-# folders = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '+', '', 'eq', 'mul', 'sub', 'x']
 classnames = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'add', 'div', 'eq', 'mul', 'sub',
               'x']  # removed 'dec', 'y', 'z'
 
@@ -47,32 +48,32 @@ classnames = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'add', 'div', 'e
 # cv2.waitKey(0)
 
 '''Batch troubleshooting'''
-k=0
-for img in list(data_dir.glob('4/*.png')) + list(data_dir.glob('4/*.jpg')):
-    img_path = img
-    img = cv2.imread(str(img))
-
-    def path_leaf(path):
-        head, tail = ntpath.split(path)
-        return tail or ntpath.basename(head)
-
-
-    img_path = path_leaf(img_path)
-    # cv2.imshow(str(img_path), img)
-    # cv2.waitKey(0)
-    resized_img = sg.segmentDataset(img, groupAll=True)
-    if len(resized_img)>1:
-        print(img_path)
-        resized_imgs = sg.segmentDataset(cv2.imread('C:/Users/jerry/Downloads/traindata/dataset/x/'+img_path), test=True, groupAll=True)
-        cv2.imshow('x', resized_imgs[0])
-
-    # cv2.imwrite('dataset/x/' + str(k) + '.png', resized_img[0])
-
-    k+=1
+# k=0
+# for img in list(data_dir.glob('4/*.png')) + list(data_dir.glob('4/*.jpg')):
+#     img_path = img
+#     img = cv2.imread(str(img))
+#
+#     def path_leaf(path):
+#         head, tail = ntpath.split(path)
+#         return tail or ntpath.basename(head)
+#
+#
+#     img_path = path_leaf(img_path)
+#     # cv2.imshow(str(img_path), img)
+#     # cv2.waitKey(0)
+#     resized_img = sg.segmentDataset(img, groupAll=True)
+#     if len(resized_img)>1 :
+#         print(img_path)
+#         resized_imgs = sg.segmentDataset(cv2.imread('C:/Users/jerry/Downloads/traindata/dataset/4/'+img_path), test=True, groupAll=True)
+#         cv2.imshow('x', resized_imgs[0])
+#         cv2.waitKey(0)
+#     cv2.imwrite('dataset/4/' + str(k) + '.png', resized_img[0])
+#
+#     k+=1
     # print(len(resized_img))
-    cv2.imshow(str(img_path), resized_img[0])
-    cv2.waitKey(0)
-    cv2.destroyWindow(str(img_path))
+    # cv2.imshow(str(img_path), resized_img[0])
+    # cv2.waitKey(0)
+    # cv2.destroyWindow(str(img_path))
 
 '''Concatenating datasets'''
 # (x_train,y_train),(x_test,y_test) = keras.datasets.mnist.load_data()
@@ -87,3 +88,17 @@ for img in list(data_dir.glob('4/*.png')) + list(data_dir.glob('4/*.jpg')):
 #     print("saved")
 # cv2.imshow('saved', cv2.imread('test_data/0.jpg'))
 # cv2.waitKey(0)
+
+
+''' Showing dataset'''
+for i in range(9):
+    classname = classnames[random.randint(0,15)]
+    imgpath = (list(data_dir.glob(classname + '/*.png'))+list(data_dir.glob(classname+'/*.jpg')))[random.randint(0,100)]
+    img = cv2.imread(str(imgpath))
+    ax = plt.subplot(3,3,i+1)
+    plt.imshow(img)
+    plt.title(classname + f', {img.shape}')
+    plt.axis("off")
+plt.show()
+
+

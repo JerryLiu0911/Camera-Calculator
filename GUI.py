@@ -6,19 +6,19 @@ from kivymd.app import MDApp
 from kivymd.uix.button import MDFillRoundFlatButton
 from kivymd.uix.screen import Screen
 from kivymd.uix.widget import MDWidget
-
 import ImageSegmentationModule as sg
 from tensorflow import keras
 import numpy as np
 
 
-
+# As the cropping box is interactive, a seperate class needs to be created
+# for the cropping box in order to be imposed onto the caera footage.
 class CropBox(MDWidget):
 
     def __init__(self, **kwargs):
-        super(CropBox, self).__init__(**kwargs)
-        self.TouchDirectionY = None
-        self.TouchDirectionX = None
+        super(CropBox, self).__init__(**kwargs)     # inheriting the constructor from MDWidget class
+        self.TouchDirectionY = None                 # initialise all variables to None as they will soon be updated
+        self.TouchDirectionX = None                 # accordingly to the size of the window in on_size
         self.touch_x = None
         self.touch_y = None
         self.current_x = None
@@ -26,14 +26,14 @@ class CropBox(MDWidget):
         self.isTouchInBox = False
         self.cropBoxHeight = self.height * 1
         self.cropBoxWidth = self.width * 1
-        with self.canvas:
+        with self.canvas:               # draws cropbox rectangle
             Color(rgba=(1, 1, 1, 0.4))
             self.cropBox = RoundedRectangle(
                 pos=(self.center_x - self.cropBoxWidth / 2, self.center_y + self.height * 0.1),
                 size=(self.cropBoxWidth, self.cropBoxHeight),
                 width=2,
             )
-            self.cropPrompt = Label(
+            self.cropPrompt = Label(        # text prompt
                 text="Align your math equation within the box",
                 color=(1, 1, 1),
                 halign='center',
@@ -41,34 +41,36 @@ class CropBox(MDWidget):
                 font_size=12
             )
 
-    def on_size(self, *args):
+    def on_size(self, *args):           # updates the dimensions of the box dynamically.
         self.clear_widgets()
-        self.cropBoxHeight = self.height * 0.15
-        self.cropBoxWidth = self.width * 0.65
+        self.cropBoxHeight = self.height * 0.3
+        self.cropBoxWidth = self.width * 0.8
         self.cropBox.pos = self.center_x - self.cropBoxWidth / 2, self.center_y + self.height * 0.1 - self.cropBoxHeight / 2
         self.cropBox.size = self.cropBoxWidth, self.cropBoxHeight
         self.cropPrompt.pos = self.center_x - 50, self.cropBox.pos[1] + self.cropBoxHeight - self.height * 0.05
         self.cropPrompt.halign = 'center'
         print(self.cropPrompt.size)
 
+# Locates and compares the location of the touch event on the screen
     def on_touch_down(self, touch):
+
+        # determines if the touch is within the box
         self.touch_x, self.touch_y = touch.pos
-        # print(touch.pos)
-        # print(self.cropBox.pos[0])
         if (self.cropBox.pos[0] - 20 <= self.touch_x <= self.cropBox.pos[0] + self.cropBoxWidth + 20) and (
                 self.cropBox.pos[1] - 20 <= self.touch_y <= self.cropBox.pos[1] + self.cropBoxHeight + 20):
             print("within")
             self.isTouchInBox = True
             self.current_x = self.touch_x
             self.current_y = self.touch_y
+
+            # determines the direction which the box will be expanding/shrinking depending on the position of the
+            # initial touch event
             self.TouchDirectionX = (self.touch_x - self.center_x) / abs(self.touch_x - self.center_x)
             self.TouchDirectionY = (self.touch_y - self.cropBox.pos[1] - self.cropBoxHeight / 2) / abs(
                 self.touch_y - self.cropBox.pos[1] - self.cropBoxHeight / 2)
             print(self.TouchDirectionX)
         else:
-            # button = self.ids['button']
             self.isTouchInBox = False
-            print("someone's doing sum shit")
 
     def on_touch_move(self, touch):
         if self.isTouchInBox:
@@ -126,9 +128,8 @@ class GUI(Screen):
         cv2.imwrite('croppedinput.jpg', img)
         print("capture")
         model = keras.models.load_model('CNN_symbols')
-        imgs, areas = sg.segment('croppedinput.jpg', test = True)
+        imgs, areas = sg.segment('croppedinput.jpg', test = True, Contour_thresh=40)
         img_array = keras.preprocessing.image.img_to_array(imgs)
-        #  img_array = tf.expand_dims(img_array, 0)
         predicted_labels = model.predict(img_array)
         predicted_values = [max(p) for p in predicted_labels]
         predicted_labels = predicted_labels.argmax(axis=1)
@@ -138,8 +139,14 @@ class GUI(Screen):
         for i in range(0, len(ans)):
             if ans[i] == 'mul' and ans[i + 1] in symbols:
                 ans[i] = 'x'
-            if (ans[i] == '2' or ans =='8') and areas[i] <= np.mean(areas) / 3:
+            if ans[i]=='6' and areas[i] <= np.mean(areas) / 2.2:
+                ans[i] = 'div'
+            if (ans[i] == '2' or ans[i] =='8') and areas[i] <= np.mean(areas) / 2.2:
                 ans[i] = 'eq'
+            if predicted_values[i]<0.65:
+                print('error. Retaking of photo is advised')
+        print(np.mean(areas))
+        print(areas)
         print(ans)
         print(predicted_values)
 
