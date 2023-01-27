@@ -9,39 +9,39 @@ import itertools
 import ImageSegmentationModule as sg
 
 # testing with image data
-image, areas, aspect_ratios = sg.segment('Images/math3.jpg',size = 50, Contour_thresh=20, test=True)
-
-# converts to input
-img_array = keras.preprocessing.image.img_to_array(image)
-
-# load pre-trained model from CNN.py
+# image, areas, aspect_ratios = sg.segment('Images/math3.jpg',size = 50, Contour_thresh=20, test=True)
+#
+# # converts to input
+# img_array = keras.preprocessing.image.img_to_array(image)
+#
+# # load pre-trained model from CNN.py
 model = keras.models.load_model('CNN')
-
-# outputs the 'confidence' of each classification, as well as the corresponding index to the class.
-prediction = model.predict(img_array)
-print(prediction)
-print([max(p) for p in prediction])
-prediction = prediction.argmax(axis=1)
+#
+# # outputs the 'confidence' of each classification, as well as the corresponding index to the class.
+# prediction = model.predict(img_array)
+# print(prediction)
+# print([max(p) for p in prediction])
+# prediction = prediction.argmax(axis=1)
 classNames = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '+', '/', '=', '*', '-', 'x']
-ans = [classNames[i] for i in prediction]
-print(ans)
+# ans = [classNames[i] for i in prediction]
+# print(ans)
 symbols = ['+', '/', '=', '*', '-']
 
 # Context assisted classification : after taking in the predicted values from the neural network, factors such as
 # size of the cropping box and mathematical syntax are taken into account to correct misclassified symbols.
-for i in range(0, len(ans)):
-    if (ans[i] == 'mul' and ans[i + 1] in symbols) or (
-            ans[i] == '4' and areas[i] <= max(areas) / 1.8 and 0.75<aspect_ratios[i]<1.2):
-        ans[i] = 'x'
-    if (ans[i] == '8' or ans[i] == '2') and areas[i] <= np.mean(areas) / 3:
-        ans[i] = 'eq'
-    if (ans[i] == '6' and areas[i] <= np.mean(areas) / 2 and 0.8<aspect_ratios[i]<1.2):
-        ans[i]='+'
-print(aspect_ratios)
-print(ans)
-print(areas)
-print(np.mean(areas))
-print(max(areas))
+# for i in range(0, len(ans)):
+#     if (ans[i] == 'mul' and ans[i + 1] in symbols) or (
+#             ans[i] == '4' and areas[i] <= max(areas) / 1.8 and 0.75<aspect_ratios[i]<1.2):
+#         ans[i] = 'x'
+#     if (ans[i] == '8' or ans[i] == '2') and areas[i] <= np.mean(areas) / 3:
+#         ans[i] = 'eq'
+#     if (ans[i] == '6' and areas[i] <= np.mean(areas) / 2 and 0.8<aspect_ratios[i]<1.2):
+#         ans[i]='+'
+# print(aspect_ratios)
+# print(ans)
+# print(areas)
+# print(np.mean(areas))
+# print(max(areas))
 
 # Load the training dataset
 data_dir = pathlib.Path('C:/Users/jerry/OneDrive/Documents/GitHub/Camera-Calculator/dataset')

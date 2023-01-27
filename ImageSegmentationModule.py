@@ -345,3 +345,4 @@ def segmentDataset(img, test=False, groupAll=False):
 
 
 #segment('Images/math4.jpg', test=True, Contour_thresh=18)
+print(cv2.imread('Images/math4.jpg').shape)

@@ -128,7 +128,7 @@ class GUI(Screen):
         cv2.imwrite('croppedinput.jpg', img)
         print("capture")
         model = keras.models.load_model('CNN_symbols')
-        imgs, areas = sg.segment('croppedinput.jpg', test = True, Contour_thresh=40)
+        imgs, areas, aspect_ratios = sg.segment('croppedinput.jpg', test = True, Contour_thresh=40)
         img_array = keras.preprocessing.image.img_to_array(imgs)
         predicted_labels = model.predict(img_array)
         predicted_values = [max(p) for p in predicted_labels]
