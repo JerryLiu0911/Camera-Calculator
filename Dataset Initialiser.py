@@ -7,8 +7,8 @@ import random
 
 # data_dir = pathlib.Path('C:/Users/jerry/OneDrive/Documents/GitHub/Camera-Calculator/dataset')
 data_dir = pathlib.Path('C:/Users/jerry/Downloads/traindata/dataset')
-# folders = list(data_dir.glob('*'))[1:]
-# print(folders)
+folders = list(data_dir.glob('*'))[1:]
+print(folders)
 classnames = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'add', 'div', 'eq', 'mul', 'sub',
               'x']  # removed 'dec', 'y', 'z'
 
@@ -22,15 +22,15 @@ classnames = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'add', 'div', 'e
 #         # cv2.imshow(str(i), img)
 #         resized_img = sg.segmentDataset(img)
 #         if resized_img[0] == 'error' or len(resized_img) > 1:
+#             print(len(resized_img))
 #             print(img_path)
-#             resized_img, areas = sg.segment(img)
+#             resized_img, areas = sg.segment(img, test=True)
 #             flag = True
 #             break
-#         cv2.imwrite('dataset/' + classnames[i] + '/' + str(k) + '.png', resized_img[0])
+#         cv2.imwrite('test_data/' + classnames[i] + '/' + str(k) + '.png', resized_img[0])
 #         k += 1
 #     if flag:
 #         break
-
         # blacklisted images C:\Users\jerry\Downloads\traindata\dataset\x\87omOgfZ.png
 
 ''' Check loss '''
@@ -43,9 +43,10 @@ classnames = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'add', 'div', 'e
 
 
 ''' individual troubleshooting '''
-# resized_imgs = sg.segmentDataset(cv2.imread('C:/Users/jerry/Downloads/traindata/dataset/x/A9VJ64y0.png'), test=True, groupAll=True)
-# cv2.imshow('x', resized_imgs[0])
-# cv2.waitKey(0)
+resized_imgs = sg.segment(cv2.imread('C:/Users/jerry/Downloads/Picture3.jpg'), test=True) ,# groupAll=False)
+print(len(resized_imgs))
+cv2.imshow('x', resized_imgs[0])
+cv2.waitKey(0)
 
 '''Batch troubleshooting'''
 # k=0
@@ -91,14 +92,14 @@ classnames = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'add', 'div', 'e
 
 
 ''' Showing dataset'''
-for i in range(9):
-    classname = classnames[random.randint(0,15)]
-    imgpath = (list(data_dir.glob(classname + '/*.png'))+list(data_dir.glob(classname+'/*.jpg')))[random.randint(0,100)]
-    img = cv2.imread(str(imgpath))
-    ax = plt.subplot(3,3,i+1)
-    plt.imshow(img)
-    plt.title(classname + f', {img.shape}')
-    plt.axis("off")
-plt.show()
+# for i in range(9):
+#     classname = classnames[random.randint(0,15)]
+#     imgpath = (list(data_dir.glob(classname + '/*.png'))+list(data_dir.glob(classname+'/*.jpg')))[random.randint(0,100)]
+#     img = cv2.imread(str(imgpath))
+#     ax = plt.subplot(3,3,i+1)
+#     plt.imshow(img)
+#     plt.title(classname + f', {img.shape}')
+#     plt.axis("off")
+# plt.show()
 
 

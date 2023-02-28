@@ -11,10 +11,10 @@ from tensorflow import keras
 import numpy as np
 
 
-# As the cropping box is interactive, a seperate class needs to be created
-# for the cropping box in order to be imposed onto the caera footage.
 class CropBox(MDWidget):
-
+    '''As the cropping box is interactive, a seperate class needs to be created
+    for the cropping box for it to be imposed on top of the camera footage, as well as for ease
+    of retrieving coordinate data for cropping. '''
     def __init__(self, **kwargs):
         super(CropBox, self).__init__(**kwargs)     # inheriting the constructor from MDWidget class
         self.TouchDirectionY = None                 # initialise all variables to None as they will soon be updated

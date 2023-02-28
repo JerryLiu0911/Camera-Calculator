@@ -207,12 +207,16 @@ def resize(img_list, size):
             value=(0, 0, 0),
         )
         resized_img = cv2.dilate(resized_img, np.ones((2, 2), np.uint8))
+        #note the below is experimental
+        resized_img = cv2.resize(resized_img, (20,20))
+        resized_img = cv2.resize(resized_img, (size, size))
         resized_imgs.append(resized_img)
     return resized_imgs
 
 
 def segment(file, test=False, size = 50, Contour_thresh=22):
     img = cv2.imread(file)
+    # img = file
     im_copy = img.copy()
     result = img.copy()
     initial = img.copy()
@@ -235,11 +239,17 @@ def segment(file, test=False, size = 50, Contour_thresh=22):
     gray = cv2.cvtColor(result, cv2.COLOR_BGR2GRAY)
 
     # applying Gaussian blur
-    blur = cv2.bilateralFilter(gray, 8, 40, 75)
+    blur = cv2.bilateralFilter(gray, 5, 40, 75)
+    # blur = cv2.GaussianBlur(gray, (5,5), 0)
 
     # experimenting with thresholding functions
+    # Do note that Otsu's binarization does not work well with empty backgrounds
     thresh = cv2.threshold(blur, 0, 255, cv2.THRESH_OTSU | cv2.THRESH_BINARY_INV)[1]
-
+    if test:
+        cv2.imshow("thresh1", thresh)
+        cv2.waitKey(0)
+        cv2.destroyWindow("thresh1")
+    # thresh = cv2.morphologyEx(thresh, cv2.MORPH_OPEN, np.ones((5, 5), np.uint8))
     # applying Canny edge detection to extract contour lines
     edged = cv2.Canny(thresh, 70, 200)
 
@@ -248,6 +258,8 @@ def segment(file, test=False, size = 50, Contour_thresh=22):
 
     # groups overlapping contours
     coords = drawGroupContours(coords, img)
+    # stores identified boxes in image to be displayed in GUI
+    cv2.imwrite("byCapture.jpg", img)
 
     # stores the cropped images as a list, areas and aspect_ratio of each of the images to be used for
     # classification correction
@@ -305,16 +317,16 @@ def segmentDataset(img, test=False, groupAll=False):
     ''' Segementation function to reduce distribution mismatch between the training data and actual input data'''
 
     # as the image is inverted (white background and dark numbers),
-    # an erosion has a dilation effect on the numbers/symbols as too simulate the effects of blurring
-    img = cv2.erode(img, np.ones((3, 3), np.uint8))
+    # an erosion has a dilation effect on the numbers/symbols as to simulate the effects of blurring
+    # img = cv2.erode(img, np.ones((3, 3), np.uint8))
     im_copy = img
     initial = img
     initial = removeStructure(initial, 1, 1, 1) # only removes lines which cross the entire image, as images are
                                                 # already cropped, the threshold needs to be decreased.
-    direction = getDirection(initial, im_copy, threshold=1)
+    direction = getDirection(initial, im_copy, threshold=1) # ensures only background lines are removed.
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
     gray = cv2.erode(gray, np.ones((3, 3), np.uint8))
-    blur = cv2.bilateralFilter(gray, 5, 75, 75)
+    blur = cv2.bilateralFilter(gray, 9, 75, 75)
     thresh = cv2.threshold(blur, 0, 255, cv2.THRESH_OTSU | cv2.THRESH_BINARY_INV)[1]
     edged = cv2.Canny(thresh, 70, 200)
     coords = findContourBoxes(edged, im_copy, 100)
@@ -335,6 +347,9 @@ def segmentDataset(img, test=False, groupAll=False):
     coords = drawGroupContours(coords, initial, 100, groupAll) # groups all broken components if any.
     img_list, areas, aspect_ratios = cropContourBoxes(coords, thresh)
     resized_imgs = resize(img_list, 50)
+    for img in resized_imgs:
+        img = cv2.resize(img, (int(10), int(10)),  interpolation=cv2.INTER_LINEAR)
+        img = cv2.resize(img, (500, 500),  interpolation=cv2.INTER_LINEAR)
     if test:
         cv2.imshow('grouped', initial)
         cv2.waitKey(0)
@@ -344,5 +359,5 @@ def segmentDataset(img, test=False, groupAll=False):
     return resized_imgs
 
 
-#segment('Images/math4.jpg', test=True, Contour_thresh=18)
-print(cv2.imread('Images/math4.jpg').shape)
+# segment('croppedinput.jpg', test=True, Contour_thresh=18)
+# print(cv2.imread('Images/math4.jpg').shape)
