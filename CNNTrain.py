@@ -1,17 +1,7 @@
 import tensorflow as tf
 from tensorflow import keras
-import numpy as np
-import pandas as pd
-import matplotlib.pyplot as plt
-import cv2
 import pathlib
 
-
-'''Converting to tflite'''
-model = tf.keras.models.load_model('CNN')
-converter = tf.lite.TFLiteConverter.from_keras_model(model)
-tflite_model = converter.convert()
-open('CNN.tflite', 'wb').write(tflite_model)
 
 data_dir = pathlib.Path('C:/Users/jerry/OneDrive/Documents/GitHub/Camera-Calculator/dataset')
 image_count = len(list(data_dir.glob('*/*.*')))
@@ -36,16 +26,6 @@ val_ds = keras.preprocessing.image_dataset_from_directory(
 )
 
 print(train_ds.class_names)
-# (x_train, y_train), (x_test, y_test) = keras.datasets.mnist.load_data()
-# print(np.shape(x_train))
-# x_train = np.array([cv2.resize(img, (50,50)) for img in x_train ])
-# x_test = np.array([cv2.resize(img, (50,50)) for img in x_test ])
-# x_train = x_train / 255
-# x_test = x_test / 255
-
-# x_train_flattened = x_train.reshape(len(x_train),784)
-# print(x_train_flattened.shape)
-# x_test_flattened = x_test.reshape(len(x_test),784)
 
 # Create the model
 model = keras.Sequential([
@@ -72,8 +52,13 @@ model.compile(optimizer='adam',
 # Train the model
 model.fit(train_ds, validation_data= val_ds, epochs=10, callbacks= keras.callbacks.EarlyStopping(patience=2))
 model.summary()
-# model.save('CNN')
+model.save('CNN')
 
+'''Converting to tflite'''
+model = tf.keras.models.load_model('CNN')
+converter = tf.lite.TFLiteConverter.from_keras_model(model)
+tflite_model = converter.convert()
+open('CNN.tflite', 'wb').write(tflite_model)
 
 
 '''Random bs below'''

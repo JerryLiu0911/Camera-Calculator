@@ -1,11 +1,11 @@
 from kivy.animation import Animation
-from kivy.utils import platform
 from kivy.graphics import Color, RoundedRectangle
 from kivy.properties import ObjectProperty, StringProperty
 from kivy.uix.camera import Camera
 from kivy.uix.label import Label
 from kivy.uix.scrollview import ScrollView
 from kivymd.app import MDApp
+import tensorflow as tf
 import re
 import os
 from kivy.lang import Builder
@@ -19,7 +19,6 @@ from kivymd.uix.screen import MDScreen
 from kivymd.uix.widget import MDWidget
 import ImageSegmentationModule as sg
 import numpy as np
-import tensorflow as tf
 
 Builder.load_string(
     '''
@@ -72,7 +71,7 @@ Builder.load_string(
         cols: 1
         adaptive_height: True
         padding: 0, 8
-        OneLineAvatarListItem:
+        OneLineListItem:
             id: second
             text: "Segmented Numbers"
             _no_ripple_effect: True
@@ -152,7 +151,6 @@ Builder.load_string(
     # string: app.root.ids.Display.ids.card.ids.front_layer.ids.Layer.ids.layout.ids.recognized.text
     MDTextField:
         id: textField
-        # hint_text: "Recognized Numbers: "
         text: app.string
 
 
@@ -198,28 +196,6 @@ class CustomCamera(Camera):
         else:
             self.open_permissison_popup()
 
-    def open_permission_popup(self):
-        self.dialog = MDDialog(
-            title="Camera Error",
-            text="Camera permissions should be enabled"
-        )
-        self.dialog.open()
-
-    def get_auth(self, ):
-        # get permissions from camera
-        if platform == 'android':
-            from android.permissions import Permission, request_permissions
-            from jnius import autoclass
-
-            self.index = autoclass('android.hardware.Camera2$CameraInfo').CAMERA_FACING_BACK
-
-            def callback(permission, results):
-                if all([res for res in results]):
-                    print("Got all permissions")
-                else:
-                    print("Permission error")
-
-            request_permissions([Permission.CAMERA, Permission.WRITE_EXTERNAL_STORAGE])
 
 
 class CropBox(MDWidget):
@@ -244,10 +220,6 @@ class CropBox(MDWidget):
                 size=(self.cropBoxWidth, self.cropBoxHeight),
                 width=2,
             )
-            # self.corner1 = Triangle(
-            #     points=[self.corners[0], self.corners[3],
-            #             self.corners[0] + self.width * 0.1]
-            # )
             self.cropPrompt = Label(  # text prompt
                 text="Align your math equation within the box",
                 color=(0, 0, 0, 1),
@@ -264,6 +236,7 @@ class CropBox(MDWidget):
         self.cropBox.size = self.cropBoxWidth, self.cropBoxHeight
         self.cropPrompt.pos = self.center_x - 50, self.cropBox.pos[1] + self.cropBoxHeight - self.height * 0.05
         self.cropPrompt.halign = 'center'
+        print(self.cropPrompt.size)
 
     # Locates and compares the location of the touch event on the screen
     def on_touch_down(self, touch):
@@ -315,10 +288,12 @@ class CameraClick(BoxLayout):
                  "\n   -integers"
                  "\n   -symbols: +, ÷, -, =, *"
                  "\n   -variable x\n"
+
                  "\nFor the most accurate results,\n"
                  "\n   -The equation should fill as much of the input box as possible"
                  "\n   -The input box should contain nothing other than the desired equation"
                  "\n   -A clear background with good lighting, as well as clear and visible ink will lead to the best results."
+                 "\n   -The equation should be as horizontal as possible to reduce effects of rotation (such as a + into a *)"
         )
         self.dialog.open()
 
@@ -331,7 +306,9 @@ class CameraClick(BoxLayout):
         self.camera.export_to_png(
             os.path.join(os.getcwd(),
                          'byCapture.jpg'))  # returns what is essentially a screenshot of the window with the edges transparent.
-                                            # although functionally the same and arguably more efficient at capturing
+        print("Shape of image = ", cv2.imread(
+            os.path.join(os.getcwd(),
+                         'byCapture.jpg')))  # although functionally the same and arguably more efficient at capturing
         self.texture = self.camera.texture  # It requires post-processing to remove the edges of the image
         height, width = self.texture.height, self.texture.width
         img_data = np.frombuffer(self.texture.pixels, dtype=np.uint8)
@@ -350,22 +327,24 @@ class CameraClick(BoxLayout):
         (0, 0) as the top left corner of the window. The coordinates here therefore show using the kivy coordinate system
         in this order, (leftmost x, bottom y, right x, top y). 
         '''
-        # print("Shape of image = ", cv2.imread(os.path.join(os.getcwd(),'byCapture.jpg')))
-        # print(f"window resolution : {self.height}, {self.width}")
-        # print("camera resolution : ", self.camera.resolution)
-        # print("texture shape : ", self.img.shape)
-        # print(self.cropCoords)
+        print(f"window resolution : {self.height}, {self.width}")
+        print("camera resolution : ", self.camera.resolution)
+        print("texture shape : ", self.img.shape)
+        print(self.cropCoords)
         cv2.imwrite(os.path.join(os.getcwd(), 'texture.jpg'), self.img)
         cv2.waitKey(0)
 
         self.img = self.img[int(self.img.shape[0] - self.cropCoords[3]):
                             int(self.img.shape[0] - self.cropCoords[1]),
                    int(self.cropCoords[0]): int(self.cropCoords[2])]
+        print("resultant img", self.img.shape)
         cv2.imwrite(os.path.join(os.getcwd(), 'croppedinput.jpg'), self.img)
+
+        print('Captured')
 
     def when_pressed(self):
         self.capture()
-        image, areas, aspect_ratios = sg.segment(os.path.join(os.getcwd(), 'croppedinput.jpg'), Contour_thresh=30)
+        image, areas, aspect_ratios = sg.segment(os.path.join(os.getcwd(), 'croppedinput.jpg'), test=False)
         print("areas", areas)
         img_array = np.reshape(image, [len(image), 50, 50, 1])
         img_array = np.array(img_array, np.float32)
@@ -376,6 +355,7 @@ class CameraClick(BoxLayout):
             model.set_tensor(model.get_input_details()[0]['index'], input)
             model.invoke()
             prediction = model.get_tensor(model.get_output_details()[0]['index'])
+            # predictedIndex.append(int(prediction.argmax(axis=1)))
             predictions.append(prediction)
         predictions = np.reshape(predictions, (len(predictions), 16))
         app.setString(
@@ -389,12 +369,18 @@ class CameraClick(BoxLayout):
         size of the cropping box and mathematical syntax are taken into account to correct misclassified symbols.'''
 
         predictedIndex = predictions.argmax(axis=1)
+        print("predictedIndex", predictedIndex)
         certainty = [np.max(p) for p in predictions]
         classNames = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '+', '÷', '=', '*', '-', 'x']
         ans = [classNames[i] for i in predictedIndex]
+        classAndCertainty = [(classNames[p.argmax()], np.max(p)) for p in predictions]
+        print(classAndCertainty)
+        print(ans)
+        print(certainty)
         symbols = ['+', '÷', '=', '*', '-']
         for i in range(0, len(ans)):
-            if ans[i] == '4' or ans[i] == '8' and areas[i] <= np.max(areas) / 1.8 and 0.75 < aspect_ratios[i] < 1.2 and certainty[i]<=0.8:
+            if (ans[i] == '4' or ans[i] == '8') and areas[i] <= np.max(areas) / 1.8 and 0.75 < aspect_ratios[
+                i] < 1.2 and certainty[i] <= 0.75:
                 ans[i] = 'x'
             if (ans[i] == '8' or ans[i] == '2') and areas[i] <= np.mean(areas) / 3:
                 ans[i] = '='
@@ -417,11 +403,13 @@ class CameraClick(BoxLayout):
                     max = predictions[currentMinEq][i]
                     secondMaxIndex = maxIndex
                     maxIndex = i
+            print("maxIndex", maxIndex, "secondMaxIndex", secondMaxIndex)
             ans[currentMinEq] = classNames[maxIndex + 9]
             if classNames[maxIndex + 9] == '=':
                 ans[currentMinEq] = classNames[secondMaxIndex + 9]
 
         for k in range(0, len(ans) - 1):
+            print(k)
             if ans[k] == '*' and ans[k + 1] in symbols:
                 ans[k] = 'x'
             elif ans[k] in symbols and ans[k + 1] == '*':
@@ -446,8 +434,6 @@ class GUI(ScreenManager):
 
 class InputBoxContents(MDBoxLayout):
     textField = ObjectProperty(None)
-
-    # layout = MyBackdropFrontLayer()
 
     def __init__(self, **kwargs):
         super(InputBoxContents, self).__init__(**kwargs)
@@ -495,18 +481,21 @@ class CamCalc(MDApp):
         self.dialog.dismiss()
 
     def setString(self, input):
+        print("set string called")
         self.string = input
         self.solve(input)
 
     def solve(self, txt):
         txt = txt.replace(' ', '')
         txt = txt.replace('÷', '/')
+        print(txt)
         symbols = "[-+/*=]"
 
         def getCoefficients(string):
-            xCoefficient = ''.join(re.findall(r'(?:(?:[0-9]+[*/])+|(?:[+-]))?x[*/]?[0-9]*', string))  # finds all x's
+            xCoefficient = ''.join(
+                re.findall(r'(?:(?:[0-9]+[*/])+|(?:[+-]))?[0-9]*x(?:[*/][0-9])*', string))  # finds all x's
 
-            constant = ''.join(re.sub(r'(?:(?:[0-9]+[*/])+|(?:[+-]))?x[*/]?[0-9]*', '',
+            constant = ''.join(re.sub(r'(?:(?:[0-9]+[*/])+|(?:[+-]))?[0-9]*x(?:[*/][0-9])*', '',
                                       string))  # removes x's from original equation to leave constants
             if constant == '':
                 constant = 0
@@ -517,6 +506,7 @@ class CamCalc(MDApp):
 
             if string[0] == 'x':
                 xCoefficient = xCoefficient + '+1'
+
             elif xCoefficient == '':
                 return 0, constant
 
@@ -539,13 +529,14 @@ class CamCalc(MDApp):
                     self.solution = "ERROR: Invalid expression"
         else:
             equation = re.split("=", txt)
+            print(equation)
             if len(equation) < 2:
                 self.solution = "ERROR: Invalid expression"
                 return None
-            # print(f"{symbols}{symbols}*")
             lhs = equation[0]
             rhs = equation[1]
             if re.findall("[0-9]/[0-9]*x", txt):
+                print(re.findall("[0-9]/[0-9]*x", txt))
                 self.solution = "ERROR: Only linear equations. For fractions use ax/b."
             elif re.findall(f"{symbols}{symbols}+", lhs) or re.findall(f"{symbols}{symbols}+", lhs):
                 self.solution = "ERROR: Consecutive symbols"
@@ -553,8 +544,12 @@ class CamCalc(MDApp):
                 self.solution = "ERROR: Coefficients should be in front of x"
             else:
                 '''using ax + b = cx +d '''
-                a, b = getCoefficients(lhs)
-                c, d = getCoefficients(rhs)
+                try:
+                    a, b = getCoefficients(lhs)
+                    c, d = getCoefficients(rhs)
+                except:
+                    self.solution = "ERROR: Please try again."
+                    return None
                 if (a - c) == 0:
                     self.solution = "ERROR: Zero error occurred."
                 else:
@@ -563,7 +558,6 @@ class CamCalc(MDApp):
 
 
 app = CamCalc()
-model = tf.lite.Interpreter(os.path.join(os.getcwd(), 'CNN.tflite'))
+model = tf.lite.Interpreter('CNN.tflite')
 model.allocate_tensors()
-
 app.run()
