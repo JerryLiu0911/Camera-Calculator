@@ -8,17 +8,15 @@ import pathlib
 
 
 '''Converting to tflite'''
-# model = tf.keras.models.load_model('CNN')
-# converter = tf.lite.TFLiteConverter.from_keras_model(model)
-# tflite_model = converter.convert()
-# open('CNN.tflite', 'wb').write(tflite_model)
+model = tf.keras.models.load_model('CNN')
+converter = tf.lite.TFLiteConverter.from_keras_model(model)
+tflite_model = converter.convert()
+open('CNN.tflite', 'wb').write(tflite_model)
 
-'''Important stuff'''
 data_dir = pathlib.Path('C:/Users/jerry/OneDrive/Documents/GitHub/Camera-Calculator/dataset')
 image_count = len(list(data_dir.glob('*/*.*')))
 print("Total no of images =", image_count)
-# print("image size = ",data_dir.glob('*/*.*').shape)
-# img_shape = data_dir.glob('*/*.*').shape
+
 # splitting data
 train_ds = keras.preprocessing.image_dataset_from_directory(
     data_dir,
@@ -52,7 +50,7 @@ print(train_ds.class_names)
 # Create the model
 model = keras.Sequential([
     keras.layers.Rescaling(1.0 / 255),
-    keras.layers.Conv2D(6, (5,5) , activation='relu'), #input_shape=(32, 32, 32)),
+    keras.layers.Conv2D(6, (5,5) , activation='relu'),
     keras.layers.MaxPooling2D((2, 2)),
     keras.layers.Conv2D(16, (5, 5), strides = 2, activation='relu'),
     keras.layers.MaxPooling2D((2, 2)),
@@ -72,7 +70,7 @@ model.compile(optimizer='adam',
               metrics=['accuracy'])
 
 # Train the model
-model.fit(train_ds, validation_data= val_ds, epochs=20, callbacks= keras.callbacks.EarlyStopping(patience=2))
+model.fit(train_ds, validation_data= val_ds, epochs=10, callbacks= keras.callbacks.EarlyStopping(patience=2))
 model.summary()
 # model.save('CNN')
 

@@ -1,146 +1,88 @@
 import tensorflow as tf
+from keras import Model
 from tensorflow import keras
 import numpy as np
 import pathlib
 import matplotlib.pyplot as plt
 from sklearn.metrics import confusion_matrix
-from keras.models import Model
-from matplotlib import pyplot
 import itertools
 import ImageSegmentationModule as sg
 
-# testing with image data
-image, areas, aspect_ratios = sg.segment('Images/math3.jpg', size=50, test=False)
+
+''' Testing with image data '''
+
+image, areas, aspect_ratios = sg.segment('croppedinput.jpg', size=50, test=True)
 
 
 # converts to input
-img_array = keras.preprocessing.image.img_to_array(image[3])
+img_array = np.reshape(image, [len(image), 50, 50, 1])
+img_array = np.array(img_array, np.float32)
 print(img_array.shape)
-img_array = img_array.reshape(1, img_array.shape[0], img_array.shape[1], img_array.shape[2])
-
-# load pre-trained model from CNNTrain.py
-model = keras.models.load_model('CNN')
-# keras.utils.plot_model(model, "\Images\modelArchitecture.png", show_shapes=True)
 
 # load converted tflite file
 interpreter = tf.lite.Interpreter(model_path='CNN.tflite')
 interpreter.allocate_tensors()
 
-# get input and output tensors
-input_details = interpreter.get_input_details()
-output_details = interpreter.get_output_details()
-print(input_details)
+
 
 # input_details is stored in the form of a dictionary, therefore we can access the input shape of the neural network
 # by calling the first layer of the neural network (index 0) with the parameter name "shape"
-input_shape = input_details[0]["shape"]
+input_shape = interpreter.get_input_details()[0]["shape"]
 print(input_shape)
 
-# configuring input to neural network from image
-interpreter.set_tensor(input_details[0]['index'], img_array)
+predictions = []
+certainty = []
+for input in img_array:
+    input = input.reshape(1, input.shape[0], input.shape[1], input.shape[2])
+    interpreter.set_tensor(interpreter.get_input_details()[0]['index'], input)   # configuring input to neural network from image
+    interpreter.invoke()                                                            # Instead of model.predict, invoke() is used.
+    prediction = interpreter.get_tensor( interpreter.get_output_details()[0]['index'])
+    predictions.append(prediction)
 
-# running tflite model
-interpreter.invoke()
+# Reshapes the output predictions to a 2d array for ease of processing.
+predictions = np.reshape(predictions, (len(predictions), 16))
 
-#retreiving output
-prediction = interpreter.get_tensor(output_details[0]['index'])
-predictedIndex = prediction.argmax(axis = 1)
-print("The predicted answer is ", predictedIndex)
+# Collects the indexes of the highest certainty
+predictedIndex = predictions.argmax(axis = 1)
+certainty = [max(p) for p in predictions]
 
-# plot feature map of first conv layer for given image
+print("predictedIndex", predictedIndex)
+print("calculated certainty", certainty)
+
+classNames = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '+', '÷', '=', '*', '-', 'x']
+ans = [classNames[i] for i in predictedIndex]
+print(ans)
+
+model = keras.models.load_model("CNN")
+
+''' Plot feature map of first conv layer for given image '''
 
 # redefine model to output right after the first hidden layer
 feature_map = Model(inputs=model.inputs, outputs=model.layers[1].output)
-# get feature map for first hidden layer
+# retrieve feature map for first hidden layer
 feature_maps = feature_map.predict(img_array)
-# plot all 64 maps in an 8x8 squares
+# Plots the
 square = 3
-ix = 1
+counter = 1
 for i in range(square):
     for i in range(2):
         # specify subplot and turn of axis
-        ax = pyplot.subplot(square, square, ix)
+        ax = plt.subplot(square, square, counter)
         ax.set_xticks([])
         ax.set_yticks([])
         # plot filter channel in grayscale
-        print(ix)
-        pyplot.imshow(feature_maps[0, :, :, ix - 1], cmap='gray')
-        ix += 1
-# show the figure
-# pyplot.show()
-#
-# outputs the 'confidence' of each classification, as well as the corresponding index to the class.
-prediction = model.predict(img_array)
-# print(prediction)
-certainty = [max(p) for p in prediction]
-# print(certainty)
-predictedIndex = prediction.argmax(axis=1)
-classNames = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '+', '/', '=', '*', '-', 'x']
-ans = [classNames[i] for i in predictedIndex]
-# print(ans)
-symbols = ['+', '/', '=', '*', '-']
+        print(counter)
+        plt.imshow(feature_maps[0, :, :, counter - 1], cmap='gray')
+        counter += 1
 
-# Context assisted classification : after taking in the predicted values from the neural network, factors such as
-# size of the cropping box and mathematical syntax are taken into account to correct misclassified symbols.
-for i in range(0, len(ans)):
-    if ans[i] == '4' and areas[i] <= max(areas) / 1.8 and 0.75 < aspect_ratios[i] < 1.2:
-        ans[i] = 'x'
-    if (ans[i] == '8' or ans[i] == '2') and areas[i] <= np.mean(areas) / 3:
-        ans[i] = '='
-    if ans[i] == '6' and areas[i] <= np.mean(areas) / 2 and 0.8 < aspect_ratios[i] < 1.2:
-        ans[i] = '='
+plt.show()
 
-if ans.count('=') >= 2:
-    currentMinEq = 0  # stores the index of the equal sign which has the lowest certainty
-    currentMinCert = 2  # stores the certainty of the lowest certain equal sign
-    max = 0
-    secondMax = 0
-    secondMaxIndex = 0
-    maxIndex = 0
-    for i in range(0, len(ans)):
-        if ans[i] == '=':
-            if certainty[i]<currentMinCert:
-                currentMinEq = i
-                currentMinCert = certainty[i]
-    for i in range(0, len(symbols)): #Searches for a second possible symbol
-        if prediction[currentMinEq][i+9] > max:
-            secondMax = max
-            max = prediction[currentMinEq][i]
-            secondMaxIndex = maxIndex
-            maxIndex = i
-    print("maxIndex", maxIndex, "secondMaxIndex", secondMaxIndex)
-    ans[currentMinEq] = classNames[maxIndex + 9]
-    if classNames[maxIndex+9] == '=':
-        ans[currentMinEq] = classNames[secondMaxIndex+9]
 
-for k in range(0, len(ans)-1):
-    print(k)
-    if ans[k] == '*' and ans[k + 1] in symbols:
-        ans[k] = 'x'
-    elif ans[k] in symbols and ans[k + 1] == '*':
-        ans[k + 1] = 'x'
-    if ans[k] in symbols and ans[k + 1] in symbols:
-        ans = ["Unclear image. Please retake photo."]
-        break
-
-print(aspect_ratios)
-print(ans)
-print(areas)
-print(np.mean(areas))
-# print(max(areas))
+'''Calculating confusion matrix'''
 
 # Load the training dataset
 data_dir = pathlib.Path('C:/Users/jerry/OneDrive/Documents/GitHub/Camera-Calculator/dataset')
 # splitting data
-train_ds = keras.preprocessing.image_dataset_from_directory(
-    data_dir,
-    validation_split=0.2,
-    subset="training",
-    seed=50,
-    image_size=(50, 50),
-    color_mode='grayscale',
-    shuffle=True
-)
 val_ds = keras.preprocessing.image_dataset_from_directory(
     data_dir,
     validation_split=0.2,
@@ -203,4 +145,4 @@ def ConfusionMatrix(predicted_labels, true_labels, classNames):
 
 
 figure = ConfusionMatrix(predicted_labels, correct_labels, classNames)
-# plt.show()
+plt.show()

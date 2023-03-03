@@ -1,7 +1,11 @@
 import numpy as np
 from kivy.utils import platform
 
+'''DERIVED CODE FROM https://github.com/teticio/kivy-tensorflow-helloworld/blob/main/model.py For implementation of 
+TFlite on mobile '''
+
 if platform == 'android':
+
     from jnius import autoclass
 
     # Using Java as
@@ -50,9 +54,8 @@ else:
     import tensorflow as tf
 
     class TensorFlowModel:
-        def load(self, model_filename, num_threads=None):
-            self.interpreter = tf.lite.Interpreter(model_filename,
-                                                   num_threads=num_threads)
+        def load(self, model_filename):
+            self.interpreter = tf.lite.Interpreter(model_filename)
             self.interpreter.allocate_tensors()
 
         def resize_input(self, shape):

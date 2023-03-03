@@ -359,5 +359,5 @@ def segmentDataset(img, test=False, groupAll=False):
     return resized_imgs
 
 
-# segment('croppedinput.jpg', test=True, Contour_thresh=18)
+# segment('croppedinput.jpg', test=True, Contour_thresh=30)
 # print(cv2.imread('Images/math4.jpg').shape)
