@@ -20,3 +20,19 @@ For ease of designing the neural network and to maximize time in optimization, I
 
 These filters, often referred to as "kernels," are typically 3 x 3 or 5 x 5 matrices that are multiplied by the image's pixel values to identify desired characteristics by sampling the same amount of pixels as their size (aka 3 x 3 kernels sample pixels in a 3 x 3 region); repeating the process across the image with a fixed “stride”, which can be thought of the distance between each sampled region. The values within the kernels are the weights which may be optimized through training where machine learning algorithms such as backpropagation may be used. The application of the kernels will be done through layers, each layer in the CNN having a different purpose. In the typical CNN, the architecture consists of a combination of convolutional layers to filter the image, a max-pooling layer to standardize and group convoluted features for ease of computing, and a fully connected layer which is responsible for classifying the collected features into their respective classes.
 Libraries such as TensorFlow will be used for the training and development of the neural network, whereas training data will be sourced from Kaggle, which will be cited in the References section. 
+
+## References
+- http://neuralnetworksanddeeplearning.com
+- https://github.com/stfc-sciml/sciml-workshop
+-https://towardsdatascience.com/a-guide-to-an-efficient-way-to-build-neural-network-architectures-part-ii-hyper-parameter-42efca01e5d7
+https://en.wikipedia.org/wiki/Gaussian_blur
+- https://en.wikipedia.org/wiki/Otsu%27s_method
+- http://www.labbookpages.co.uk/software/imgProc/otsuThreshold.html
+- https://docs.opencv.org/4.x/d9/d8b/tutorial_py_contours_hierarchy.html
+-https://opencv24-python-tutorials.readthedocs.io/en/latest/py_tutorials/py_imgproc/py_morphological_ops/py_morphological_ops.html
+https://en.wikipedia.org/wiki/Softmax_function
+-https://www.tensorflow.org/api_docs/python/tf
+-https://keras.io/api/
+https://docs.python.org/3/library/itertools.html
+-https://github.com/enggen/Deep-Learning-Coursera/tree/master/Convolutional%20Neural%20Networks
+-https://kivy.org/doc/stable/
