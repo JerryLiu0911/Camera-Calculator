@@ -61,7 +61,7 @@ tflite_model = converter.convert()
 open('CNN.tflite', 'wb').write(tflite_model)
 
 
-'''Random bs below'''
+'''Testing code below'''
 # 223/223 [==============================] - 11s 47ms/step - loss: 0.2367 - accuracy: 0.9308 - val_loss: 0.1618 - val_accuracy: 0.9545
 
 # Epoch 15/15 (32,32)
