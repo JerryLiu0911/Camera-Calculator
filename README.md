@@ -23,6 +23,11 @@ For ease of designing the neural network and to maximize time in optimization, I
 These filters, often referred to as "kernels," are typically 3 x 3 or 5 x 5 matrices that are multiplied by the image's pixel values to identify desired characteristics by sampling the same amount of pixels as their size (aka 3 x 3 kernels sample pixels in a 3 x 3 region); repeating the process across the image with a fixed “stride”, which can be thought of the distance between each sampled region. The values within the kernels are the weights which may be optimized through training where machine learning algorithms such as backpropagation may be used. The application of the kernels will be done through layers, each layer in the CNN having a different purpose. In the typical CNN, the architecture consists of a combination of convolutional layers to filter the image, a max-pooling layer to standardize and group convoluted features for ease of computing, and a fully connected layer which is responsible for classifying the collected features into their respective classes.
 Libraries such as TensorFlow will be used for the training and development of the neural network, whereas training data will be sourced from Kaggle, which will be cited in the References section. 
 
+## Results
+![image](https://github.com/user-attachments/assets/1fc2d31c-c74c-49dd-acfc-8c72f93950b3) ![image](https://github.com/user-attachments/assets/24206732-2d12-4203-8524-03be37cbe39f)
+https://www.youtube.com/watch?v=m57YgKU0cWg
+
+
 ## Confusion Matrix
 ![image](https://github.com/user-attachments/assets/2b289299-28b4-4dfb-96ed-b966919b245e)
 
