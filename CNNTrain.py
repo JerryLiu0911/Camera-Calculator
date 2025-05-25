@@ -52,13 +52,13 @@ model.compile(optimizer='adam',
 # Train the model
 model.fit(train_ds, validation_data= val_ds, epochs=10, callbacks= keras.callbacks.EarlyStopping(patience=2))
 model.summary()
-model.save('CNN')
+# model.save('CNN')
 
 '''Converting to tflite'''
-model = tf.keras.models.load_model('CNN')
-converter = tf.lite.TFLiteConverter.from_keras_model(model)
-tflite_model = converter.convert()
-open('CNN.tflite', 'wb').write(tflite_model)
+# model = tf.keras.models.load_model('CNN')
+# converter = tf.lite.TFLiteConverter.from_keras_model(model)
+# tflite_model = converter.convert()
+# open('CNN.tflite', 'wb').write(tflite_model)
 
 
 '''Random bs below'''

@@ -284,10 +284,15 @@ class CameraClick(BoxLayout):
 
     def show_information_dialog(self):
         self.dialog = MDDialog(
-            text="Acceptable inputs:\n "
+            text="How To Use:"
+                 "\n    1. Drag corners of target box to resize"
+                 "\n    2. Press the camera icon to capture"
+                 "\n    3. Correct any misidentifications with the edit icon\n"
+                 "\n Acceptable inputs:\n "
                  "\n   -integers"
                  "\n   -symbols: +, ÷, -, =, *"
                  "\n   -variable x\n"
+                 "\n *Note that the solver and recognition algorithm currently only support linear equations"
 
                  "\nFor the most accurate results,\n"
                  "\n   -The equation should fill as much of the input box as possible"
@@ -369,14 +374,9 @@ class CameraClick(BoxLayout):
         size of the cropping box and mathematical syntax are taken into account to correct misclassified symbols.'''
 
         predictedIndex = predictions.argmax(axis=1)
-        print("predictedIndex", predictedIndex)
         certainty = [np.max(p) for p in predictions]
         classNames = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '+', '÷', '=', '*', '-', 'x']
         ans = [classNames[i] for i in predictedIndex]
-        classAndCertainty = [(classNames[p.argmax()], np.max(p)) for p in predictions]
-        print(classAndCertainty)
-        print(ans)
-        print(certainty)
         symbols = ['+', '÷', '=', '*', '-']
         for i in range(0, len(ans)):
             if (ans[i] == '4' or ans[i] == '8') and areas[i] <= np.max(areas) / 1.8 and 0.75 < aspect_ratios[

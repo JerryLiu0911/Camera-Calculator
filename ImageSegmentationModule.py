@@ -42,7 +42,6 @@ def removeStructure(img, direction, v_size=3, h_size=9):
     # cv2.waitKey(0)
     # cv2.destroyWindow("extracted features")
 
-    # result = cv2.addWeighted(just_horizontal, 1, just_vertical, 0, 0) placeholder values
     return result
 
 
@@ -62,7 +61,6 @@ def getDirection(img, img_copy, threshold=1.5):
     lines = cv2.HoughLinesP(thresh, 1, np.pi / 180, 50, minLineLength=min(img.shape[:2]) / threshold, maxLineGap=5)
     gradients = []
     if lines is not None:
-        # print(lines)
         for l in lines:
             for line in l:
                 x1, y1, x2, y2 = line
