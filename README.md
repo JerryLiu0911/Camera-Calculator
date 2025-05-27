@@ -36,7 +36,16 @@ Example output:
 ---
 
 ### Neural Networks
-For ease of designing the neural network and to maximize time in optimization, I will be converting the images obtained into NumPy arrays, as NumPy arrays use less memory, along with the ease of performing matrix transformations and other mathematical operations, all of which will be immensely useful for the development of this project. I have chosen to use Convolutional Neural Networks to perform optical character recognition due to their efficiency in image recognition as they require less preprocessing of the input images and the abundance of resources available. One of the biggest advantages of Convolutional neural networks is the ability to capture spatial dependencies; where a pixel’s value is influenced by the value of nearby pixels; by applying “filters” to the image.
+
+To optimize development time and improve efficiency in designing the neural network, the images will be converted into NumPy arrays. Using NumPy arrays offers several advantages:
+
+Lower memory usage compared to raw image formats.
+
+Simplifies performing matrix transformations and other mathematical operations, which are fundamental in neural network computations.
+
+The project leverages Convolutional Neural Networks (CNNs) for optical character recognition (OCR) due to their proven efficiency in image recognition tasks. CNNs require minimal preprocessing of input images, making them highly suitable for this application.
+
+A key strength of CNNs lies in their ability to capture spatial dependencies within images. This means that a pixel’s value is analyzed in the context of its neighboring pixels through the application of learned filters (kernels), allowing the network to effectively detect patterns and features necessary for accurate recognition.
  
  ![image](https://user-images.githubusercontent.com/89786918/192470116-8201c581-36ae-46dd-be23-c0273e8120fb.png)
 
