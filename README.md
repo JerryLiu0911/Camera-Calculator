@@ -39,9 +39,8 @@ Example output:
 
 To optimize development time and improve efficiency in designing the neural network, the images will be converted into NumPy arrays. Using NumPy arrays offers several advantages:
 
-Lower memory usage compared to raw image formats.
-
-Simplifies performing matrix transformations and other mathematical operations, which are fundamental in neural network computations.
+- Lower memory usage compared to raw image formats.
+- Simplifies performing matrix transformations and other mathematical operations, which are fundamental in neural network computations.
 
 The project leverages Convolutional Neural Networks (CNNs) for optical character recognition (OCR) due to their proven efficiency in image recognition tasks. CNNs require minimal preprocessing of input images, making them highly suitable for this application.
 
@@ -58,9 +57,7 @@ The movement of kernels across the image happens with a fixed stride, which repr
 A typical CNN architecture consists of several types of layers working together:
 
 - Convolutional Layers: Apply kernels to detect features such as edges, textures, and patterns.
-
 - Max-Pooling Layers: Reduce spatial dimensions by grouping and summarizing features, improving computational efficiency and translation invariance.
-
 - Fully Connected Layers: Interpret the extracted features to classify the input into specific categories.
 
 Libraries such as TensorFlow will be used for the training and development of the neural network, whereas training data will be sourced from Kaggle, which will be cited in the References section.
