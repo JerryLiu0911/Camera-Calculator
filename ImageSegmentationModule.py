@@ -1,17 +1,7 @@
 import cv2
 import numpy as np
 import math
-# from tensorflow import keras
 import pathlib
-
-
-# tf.compat.v1.enable_eager_execution()
-
-# contrast = 1.5  # Contrast control (1.0-3.0)
-# brightness = 0  # Brightness control (0-100)
-
-
-# result = cv2.convertScaleAbs(img, alpha=contrast, beta=brightness)
 
 
 # Remove lines
@@ -38,10 +28,6 @@ def removeStructure(img, direction, v_size=3, h_size=9):
     else:
         result = just_horizontal
 
-    # cv2.imshow("extracted features", vertical_extract)
-    # cv2.waitKey(0)
-    # cv2.destroyWindow("extracted features")
-
     return result
 
 
@@ -52,7 +38,6 @@ def getDirection(img, img_copy, threshold=1.5):
     # Converting to greyscale
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
     # applying Gaussian blur
-    # blur = cv2.GaussianBlur(gray, (5, 5), 0)
     blur = cv2.bilateralFilter(gray, 9, 75, 75)
     # experimenting with thresholding functions
     thresh = cv2.threshold(blur, 0, 255, cv2.THRESH_OTSU | cv2.THRESH_BINARY_INV)[1]
@@ -355,7 +340,3 @@ def segmentDataset(img, test=False, groupAll=False):
             cv2.imshow('input', img)
             cv2.waitKey(0)
     return resized_imgs
-
-
-# segment('croppedinput.jpg', test=True, Contour_thresh=30)
-# print(cv2.imread('Images/math4.jpg').shape)
